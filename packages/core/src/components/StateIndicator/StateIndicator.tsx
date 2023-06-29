@@ -1,8 +1,9 @@
 import React, { ReactNode } from 'react';
 import styled from 'styled-components';
-import Flex from '../Flex';
+
 import State from '../../constants/State';
 import StateColor from '../../constants/StateColor';
+import Flex from '../Flex';
 import StateIndicatorDot from './StateIndicatorDot';
 
 const Color = {
@@ -11,14 +12,12 @@ const Color = {
   [State.ERROR]: StateColor.ERROR,
 };
 
-const StyledFlexContainer = styled(({ color: Color, ...rest }) => (
-  <Flex {...rest} />
-))`
-  color: ${({ color }) => color};
+const StyledFlexContainer = styled(({ ...rest }) => <Flex {...rest} />)`
+  gap: 4px;
 `;
 
 export type StateComponentProps = {
-  children: ReactNode;
+  children?: ReactNode;
   state: State;
   indicator?: boolean;
   reversed?: boolean;
@@ -37,17 +36,11 @@ export default function StateComponent(props: StateComponentProps) {
     gap = 1,
     hideTitle = false,
   } = props;
-  const iconColor = Color[state];
 
   return (
-    <StyledFlexContainer
-      color={color}
-      alignItems="center"
-      gap={gap}
-      flexDirection={reversed ? 'row-reverse' : 'row'}
-    >
+    <StyledFlexContainer color={color} alignItems="center" gap={gap} flexDirection={reversed ? 'row-reverse' : 'row'}>
       {!hideTitle && <span>{children}</span>}
-      {indicator && <StateIndicatorDot color={iconColor} />}
+      {indicator && <StateIndicatorDot state={state} />}
     </StyledFlexContainer>
   );
 }

@@ -1,5 +1,5 @@
-import { useLocalStorage } from '@ball-network/api-react';
+import { usePrefs } from '@ball-network/api-react';
 
 export default function useEnableAutoLogin() {
-  return useLocalStorage<boolean>('enableAutoLogin', true);
+  return usePrefs<boolean>('enableAutoLogin', true);
 }

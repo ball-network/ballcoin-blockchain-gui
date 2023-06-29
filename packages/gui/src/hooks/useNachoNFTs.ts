@@ -2,12 +2,7 @@ import { useGetNFTsByNFTIDsQuery, useLocalStorage } from '@ball-network/api-reac
 
 export default function useNachoNFTs() {
   const [nachoNFTsString] = useLocalStorage('nachoNFTs', '');
-  const nachoNFTIDs = nachoNFTsString
-    .split(',')
-    .map((nachoNFT: string) => nachoNFT.trim());
+  const nachoNFTIDs = nachoNFTsString.split(',').map((nachoNFT: string) => nachoNFT.trim());
 
-  return useGetNFTsByNFTIDsQuery(
-    { nftIds: nachoNFTIDs },
-    { skip: !nachoNFTsString || nachoNFTIDs.length === 0 },
-  );
+  return useGetNFTsByNFTIDsQuery({ nftIds: nachoNFTIDs }, { skip: !nachoNFTsString || nachoNFTIDs.length === 0 });
 }

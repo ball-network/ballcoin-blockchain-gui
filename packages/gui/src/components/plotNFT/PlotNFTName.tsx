@@ -1,10 +1,11 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { Trans } from '@lingui/macro';
-import styled from 'styled-components';
-import type PlotNFT from '../../types/PlotNFT';
-import usePlotNFTName from '../../hooks/usePlotNFTName';
 import { Address, Flex, TooltipIcon } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Box, Typography } from '@mui/material';
+import React from 'react';
+import styled from 'styled-components';
+
+import usePlotNFTName from '../../hooks/usePlotNFTName';
+import type PlotNFT from '../../types/PlotNFT';
 import PlotNFTExternal from '../../types/PlotNFTExternal';
 
 const StyledTitle = styled(Box)`
@@ -19,7 +20,7 @@ type Props = {
 
 export default function PlotNFTName(props: Props) {
   const {
-    variant,
+    variant = 'body1',
     nft,
     nft: {
       poolState: { p2SingletonPuzzleHash },
@@ -44,7 +45,3 @@ export default function PlotNFTName(props: Props) {
     </Flex>
   );
 }
-
-PlotNFTName.defaultProps = {
-  variant: 'body1',
-};

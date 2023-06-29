@@ -1,5 +1,18 @@
-import React, { ReactElement, useState } from 'react';
+import { useGetKeyringStatusQuery, useMigrateKeyringMutation } from '@ball-network/api-react';
+import {
+  Button,
+  AlertDialog,
+  Flex,
+  useOpenDialog,
+  useValidateChangePassphraseParams,
+  Suspender,
+} from '@ball-network/core';
 import { t, Trans } from '@lingui/macro';
+import {
+  Help as HelpIcon,
+  KeyboardCapslock as KeyboardCapslockIcon,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Checkbox,
@@ -16,30 +29,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Help as HelpIcon,
-  KeyboardCapslock as KeyboardCapslockIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
-import {
-  useGetKeyringStatusQuery,
-  useMigrateKeyringMutation,
-} from '@ball-network/api-react';
-import {
-  Button,
-  AlertDialog,
-  Flex,
-  useOpenDialog,
-  useValidateChangePassphraseParams,
-  Suspender,
-} from '@ball-network/core';
+import React, { ReactElement, useState } from 'react';
 
 export default function AppKeyringMigrator() {
   const [validateChangePassphraseParams] = useValidateChangePassphraseParams();
   const openDialog = useOpenDialog();
   const { data: keyringState, isLoading } = useGetKeyringStatusQuery();
-  const [migrateKeyring, { isLoading: isLoadingMigrateKeyring }] =
-    useMigrateKeyringMutation();
+  const [migrateKeyring, { isLoading: isLoadingMigrateKeyring }] = useMigrateKeyringMutation();
   const [showPassphraseText1, setShowPassphraseText1] = useState(false);
   const [showPassphraseText2, setShowPassphraseText2] = useState(false);
   const [showCapsLock, setShowCapsLock] = useState(false);
@@ -61,11 +57,8 @@ export default function AppKeyringMigrator() {
   let savePassphraseCheckbox: HTMLInputElement | null = null;
   let cleanupKeyringCheckbox: HTMLInputElement | null = null;
 
-  async function validateDialog(
-    passphrase: string,
-    confirmation: string,
-  ): Promise<boolean> {
-    return await validateChangePassphraseParams(null, passphrase, confirmation);
+  async function validateDialog(passphrase: string, confirmation: string): Promise<boolean> {
+    return validateChangePassphraseParams(null, passphrase, confirmation);
   }
 
   async function handleMigrate(): Promise<void> {
@@ -88,7 +81,7 @@ export default function AppKeyringMigrator() {
         await openDialog(
           <AlertDialog>
             <Trans>Keyring migration failed: {error.message}</Trans>
-          </AlertDialog>,
+          </AlertDialog>
         );
       }
     }
@@ -98,15 +91,15 @@ export default function AppKeyringMigrator() {
   if (allowEmptyPassphrase) {
     dialogMessage = (
       <Trans>
-        Legacy keyrings are no longer supported. Your keys need to be migrated
-        to a new keyring that is optionally secured by a master passphrase.
+        Legacy keyrings are no longer supported. Your keys need to be migrated to a new keyring that is optionally
+        secured by a master passphrase.
       </Trans>
     );
   } else {
     dialogMessage = (
       <Trans>
-        Legacy keyrings are no longer supported. Your keys need to be migrated
-        to a new keyring that is secured by a master passphrase.
+        Legacy keyrings are no longer supported. Your keys need to be migrated to a new keyring that is secured by a
+        master passphrase.
       </Trans>
     );
   }
@@ -126,8 +119,8 @@ export default function AppKeyringMigrator() {
   return (
     <Dialog
       aria-labelledby="keyring-migration-dialog-title"
-      fullWidth={true}
-      maxWidth={'sm'}
+      fullWidth
+      maxWidth="sm"
       open
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
@@ -140,10 +133,7 @@ export default function AppKeyringMigrator() {
           <Flex flexDirection="column" gap={2}>
             <Typography variant="body1">{dialogMessage}</Typography>
             <Typography variant="body1">
-              <Trans>
-                Enter a strong passphrase and click Migrate Keys to secure your
-                keys
-              </Trans>
+              <Trans>Enter a strong passphrase and click Migrate Keys to secure your keys</Trans>
             </Typography>
           </Flex>
           <Flex flexDirection="row" gap={2} alignItems="center">
@@ -155,6 +145,7 @@ export default function AppKeyringMigrator() {
               id="passphrase_input"
               label={<Trans>Passphrase</Trans>}
               placeholder={t`Passphrase`}
+              // eslint-disable-next-line no-return-assign -- Legacy file, will get deleted soon
               inputRef={(input: HTMLInputElement) => (passphraseInput = input)}
               type={showPassphraseText1 ? 'text' : 'password'}
               InputProps={{
@@ -166,9 +157,7 @@ export default function AppKeyringMigrator() {
                           <KeyboardCapslockIcon />
                         </Flex>
                       )}
-                      <IconButton
-                        onClick={() => setShowPassphraseText1((s) => !s)}
-                      >
+                      <IconButton onClick={() => setShowPassphraseText1((s) => !s)}>
                         <VisibilityIcon />
                       </IconButton>
                     </InputAdornment>
@@ -187,6 +176,7 @@ export default function AppKeyringMigrator() {
             id="confirmation_input"
             label={<Trans>Confirm Passphrase</Trans>}
             placeholder={t`Confirm Passphrase`}
+            // eslint-disable-next-line no-return-assign -- We want assignment
             inputRef={(input: HTMLInputElement) => (confirmationInput = input)}
             type={showPassphraseText2 ? 'text' : 'password'}
             InputProps={{
@@ -198,9 +188,7 @@ export default function AppKeyringMigrator() {
                         <KeyboardCapslockIcon />
                       </Flex>
                     )}
-                    <IconButton
-                      onClick={() => setShowPassphraseText2((s) => !s)}
-                    >
+                    <IconButton onClick={() => setShowPassphraseText2((s) => !s)}>
                       <VisibilityIcon />
                     </IconButton>
                   </InputAdornment>
@@ -218,6 +206,7 @@ export default function AppKeyringMigrator() {
             id="passphraseHintInput"
             label={<Trans>Passphrase Hint (Optional)</Trans>}
             placeholder={t`Passphrase Hint`}
+            // eslint-disable-next-line no-return-assign -- We want assignment
             inputRef={(input) => (passphraseHintInput = input)}
             fullWidth
           />
@@ -229,6 +218,7 @@ export default function AppKeyringMigrator() {
                 <Checkbox
                   disabled={isLoadingMigrateKeyring}
                   name="cleanupKeyringPostMigration"
+                  // eslint-disable-next-line no-return-assign -- We want assignment
                   inputRef={(input) => (savePassphraseCheckbox = input)}
                 />
               }
@@ -249,6 +239,7 @@ export default function AppKeyringMigrator() {
                 <Checkbox
                   disabled={isLoadingMigrateKeyring}
                   name="cleanupKeyringPostMigration"
+                  // eslint-disable-next-line no-return-assign -- We want assignment
                   inputRef={(input) => (cleanupKeyringCheckbox = input)}
                 />
               }

@@ -1,20 +1,17 @@
-import React, {
-  createContext,
-  ReactNode,
-  useState,
-  useMemo,
-  useCallback,
-} from 'react';
-import { useLocalStorage } from '@ball-network/api-react';
-import type Mode from '../../constants/Mode';
+import { usePrefs } from '@ball-network/api-react';
+import React, { createContext, ReactNode, useState, useMemo, useCallback } from 'react';
 
-export const ModeContext = createContext<
-  | {
-      mode?: Mode;
-      setMode: (mode: Mode) => void;
-    }
-  | undefined
->(undefined);
+import Mode from '../../constants/Mode';
+
+export const ModeContext = createContext<{
+  mode?: Mode;
+  setMode: (mode: Mode) => void;
+}>({
+  mode: Mode.WALLET,
+  setMode: () => {
+    throw new Error('ModeProvider not found. Please wrap your app in a <ModeProvider>.');
+  },
+});
 
 export type ModeProviderProps = {
   children: ReactNode;
@@ -25,22 +22,20 @@ export type ModeProviderProps = {
 export default function ModeProvider(props: ModeProviderProps) {
   const { mode: defaultMode, children, persist = false } = props;
   const [modeState, setModeState] = useState<Mode | undefined>(defaultMode);
-  const [modeLocalStorage, setModeLocalStorage] = useLocalStorage<
-    Mode | undefined
-  >('mode', defaultMode);
+  const [modePref, setModePref] = usePrefs<Mode | undefined>('mode', defaultMode);
 
   const handleSetMode = useCallback(
     (newMode: Mode) => {
       if (persist) {
-        setModeLocalStorage(newMode);
+        setModePref(newMode);
       } else {
         setModeState(newMode);
       }
     },
-    [persist, setModeLocalStorage, setModeState]
+    [persist, setModePref, setModeState]
   );
 
-  const mode = persist ? modeLocalStorage : modeState;
+  const mode = persist ? modePref : modeState;
 
   const context = useMemo(
     () => ({
@@ -50,7 +45,5 @@ export default function ModeProvider(props: ModeProviderProps) {
     [mode, handleSetMode]
   );
 
-  return (
-    <ModeContext.Provider value={context}>{children}</ModeContext.Provider>
-  );
+  return <ModeContext.Provider value={context}>{children}</ModeContext.Provider>;
 }

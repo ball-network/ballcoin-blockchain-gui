@@ -1,40 +1,27 @@
-import React, { useMemo } from 'react';
-import { Trans } from '@lingui/macro';
 import { WalletType } from '@ball-network/api';
 import { useGetWalletBalanceQuery } from '@ball-network/api-react';
-import {
-  FormatLargeNumber,
-  mojoToCATLocaleString,
-  mojoToBallLocaleString,
-  useLocale,
-} from '@ball-network/core';
+import { mojoToCATLocaleString, mojoToBallLocaleString, useLocale } from '@ball-network/core';
 import { useWallet } from '@ball-network/wallets';
+import { Trans } from '@lingui/macro';
+import React, { useMemo } from 'react';
 
 export type OfferBuilderWalletBalanceProps = {
   walletId: number;
 };
 
-export default function OfferBuilderWalletBalance(
-  props: OfferBuilderWalletBalanceProps,
-) {
+export default function OfferBuilderWalletBalance(props: OfferBuilderWalletBalanceProps) {
   const { walletId } = props;
   const [locale] = useLocale();
-  const { data: walletBalance, isLoading: isLoadingWalletBalance } =
-    useGetWalletBalanceQuery({
-      walletId,
-    });
+  const { data: walletBalance, isLoading: isLoadingWalletBalance } = useGetWalletBalanceQuery({
+    walletId,
+  });
 
   const { unit, wallet, loading } = useWallet(walletId);
 
   const isLoading = isLoadingWalletBalance || loading;
 
   const ballBalance = useMemo(() => {
-    if (
-      isLoading ||
-      !wallet ||
-      !walletBalance ||
-      !('spendableBalance' in walletBalance)
-    ) {
+    if (isLoading || !wallet || !walletBalance || !('spendableBalance' in walletBalance)) {
       return undefined;
     }
 
@@ -47,13 +34,7 @@ export default function OfferBuilderWalletBalance(
     }
 
     return undefined;
-  }, [
-    isLoading,
-    wallet,
-    walletBalance,
-    walletBalance?.spendableBalance,
-    locale,
-  ]);
+  }, [isLoading, wallet, walletBalance, locale]);
 
   if (!isLoading && ballBalance === undefined) {
     return null;

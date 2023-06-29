@@ -1,7 +1,7 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { FormatLargeNumber, CardSimple } from '@ball-network/core';
 import { useGetTotalHarvestersSummaryQuery } from '@ball-network/api-react';
+import { FormatLargeNumber, CardSimple } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import React from 'react';
 
 export default function PlotCardTotalPlots() {
   const { plots, initializedHarvesters, isLoading } = useGetTotalHarvestersSummaryQuery();

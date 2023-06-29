@@ -1,30 +1,7 @@
 // deprecated
 import Unit from '../constants/Unit';
-import UnitValue from '../constants/UnitValue';
 import UnitAliases from '../constants/UnitAliases';
-
-type Display = {
-  format: string;
-  fractionDigits: number;
-};
-
-
-const display: {
-  [key in Unit]: Display;
-} = {
-  ball: {
-    format: '{amount} BALL',
-    fractionDigits: 12,
-  },
-  mojo: {
-    format: '{amount} MJ',
-    fractionDigits: 0,
-  },
-  cat: {
-    format: '{amount} CAT',
-    fractionDigits: 3,
-  },
-};
+import UnitValue from '../constants/UnitValue';
 
 function getUnitNameByAlias(unitName: string): Unit {
   const name = unitName.toLowerCase();
@@ -50,10 +27,3 @@ function getUnitName(unitName: string): Unit {
 export default function getUnitValue(unitName: string): number {
   return UnitValue[getUnitName(unitName)];
 }
-
-/*
-export function getDisplay(unitName: string): Display {
-  const unit = getUnitName(unitName);
-  return display[unit];
-}
-*/

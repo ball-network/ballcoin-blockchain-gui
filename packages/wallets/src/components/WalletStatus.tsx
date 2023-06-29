@@ -1,10 +1,11 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { Loading, State, StateIndicator } from '@ball-network/core';
-import { useGetSyncStatusQuery } from '@ball-network/api-react';
-import { Box, Typography } from '@mui/material';
-import getWalletSyncingStatus from '../utils/getWalletSyncingStatus';
 import { SyncingStatus } from '@ball-network/api';
+import { useGetSyncStatusQuery } from '@ball-network/api-react';
+import { Loading, State, StateIndicator } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Box, Typography } from '@mui/material';
+import React from 'react';
+
+import getWalletSyncingStatus from '../utils/getWalletSyncingStatus';
 import WalletStatusHeight from './WalletStatusHeight';
 
 export type WalletStatusProps = {
@@ -32,7 +33,7 @@ export default function WalletStatus(props: WalletStatusProps) {
   const { data: walletState, isLoading } = useGetSyncStatusQuery(
     {},
     {
-      pollingInterval: 10000,
+      pollingInterval: 10_000,
     }
   );
 

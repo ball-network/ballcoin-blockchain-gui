@@ -1,7 +1,8 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
 import { Button, Flex, CardStep, useCurrencyCode } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { Box, Typography } from '@mui/material';
+import React from 'react';
+
 import useOpenExternal from '../../../hooks/useOpenExternal';
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export default function PlotNFTSelectFaucet(props: Props) {
-  const { step, onCancel } = props;
+  const { step = 1, onCancel } = props;
   const currencyCode = useCurrencyCode();
   const openExternal = useOpenExternal();
 
@@ -44,7 +45,3 @@ export default function PlotNFTSelectFaucet(props: Props) {
     </CardStep>
   );
 }
-
-PlotNFTSelectFaucet.defaultProps = {
-  step: 1,
-};

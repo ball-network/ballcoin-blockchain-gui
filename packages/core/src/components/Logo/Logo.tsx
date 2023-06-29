@@ -1,7 +1,7 @@
+import { Ball } from '@ball-network/icons';
+import { Box, BoxProps } from '@mui/material';
 import React from 'react';
 import styled from 'styled-components';
-import { Box, BoxProps } from '@mui/material';
-import { Ball } from '@ball-network/icons';
 
 const StyledBall = styled(Ball)`
   max-width: 100%;

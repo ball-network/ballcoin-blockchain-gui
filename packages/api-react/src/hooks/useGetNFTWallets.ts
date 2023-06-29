@@ -1,16 +1,18 @@
+import type { Wallet } from '@ball-network/api';
+import { WalletType } from '@ball-network/api';
 import { useMemo } from 'react';
+
 import { useGetWalletsQuery } from '../services';
-import { Wallet, WalletType } from '@ball-network/api';
 
 export default function useGetNFTWallets() {
-  const { data, isLoading } = useGetWalletsQuery();
+  const { data, isLoading, error } = useGetWalletsQuery();
   const nftWallets = useMemo(() => {
     if (!data || isLoading) {
       return [];
     }
 
     return data.filter((wallet: Wallet) => wallet.type === WalletType.NFT);
-  }, [data]);
+  }, [data, isLoading]);
 
-  return { wallets: nftWallets, isLoading };
+  return { wallets: nftWallets, isLoading, error };
 }

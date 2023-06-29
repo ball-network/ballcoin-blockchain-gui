@@ -1,8 +1,5 @@
+import { useGetLoggedInFingerprintQuery, usePrefs } from '@ball-network/api-react';
 import { useCallback } from 'react';
-import {
-  useGetLoggedInFingerprintQuery,
-  useLocalStorage,
-} from '@ball-network/api-react';
 
 export default function useHiddenWallet(): {
   hide: (walletId: number) => void;
@@ -12,7 +9,7 @@ export default function useHiddenWallet(): {
   isLoading: boolean;
 } {
   const { data: fingerprint, isLoading } = useGetLoggedInFingerprintQuery();
-  const [hiddenWalletIds, setHiddenWalletIds] = useLocalStorage<{
+  const [hiddenWalletIds, setHiddenWalletIds] = usePrefs<{
     [key: string]: number[];
   }>('hiddenWalletsItems', {});
 
@@ -31,7 +28,7 @@ export default function useHiddenWallet(): {
         };
       });
     },
-    [setHiddenWalletIds, fingerprint]
+    [isLoading, setHiddenWalletIds, fingerprint]
   );
 
   const show = useCallback(
@@ -49,7 +46,7 @@ export default function useHiddenWallet(): {
         };
       });
     },
-    [setHiddenWalletIds, fingerprint]
+    [isLoading, setHiddenWalletIds, fingerprint]
   );
 
   const isHidden = useCallback(
@@ -61,7 +58,7 @@ export default function useHiddenWallet(): {
       const listItems = hiddenWalletIds[fingerprint] ?? [];
       return listItems.includes(walletId);
     },
-    [hiddenWalletIds, fingerprint]
+    [isLoading, hiddenWalletIds, fingerprint]
   );
 
   return {

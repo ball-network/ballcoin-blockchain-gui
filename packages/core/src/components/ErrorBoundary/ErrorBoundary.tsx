@@ -1,22 +1,24 @@
-import { Typography } from '@mui/material';
 import { Trans } from '@lingui/macro';
-import React, { Component, type ReactNode } from 'react';
-import StackTrace from "stacktrace-js";
+import { Typography } from '@mui/material';
 import { styled } from '@mui/styles';
 import qs from 'qs';
-import LayoutHero from '../LayoutHero';
+import React, { Component, type ReactNode } from 'react';
+import StackTrace from 'stacktrace-js';
+
 import Button from '../Button';
-import Link from '../Link';
 import Flex from '../Flex';
+import LayoutHero from '../LayoutHero';
+import Link from '../Link';
 
 const StyledPre = styled(Typography)(() => ({
   whiteSpace: 'pre-wrap',
 }));
 
 function formatStackTrace(stack: []) {
-  const stackTrace = stack.map(({ fileName, columnNumber, lineNumber, functionName }) => {
-    return `at ${fileName}:${lineNumber}:${columnNumber} ${functionName}`;
-  });
+  const stackTrace = stack.map(
+    ({ fileName, columnNumber, lineNumber, functionName }) =>
+      `at ${fileName}:${lineNumber}:${columnNumber} ${functionName}`
+  );
   return stackTrace.join('\n');
 }
 
@@ -28,35 +30,27 @@ export default class ErrorBoundary extends Component {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
-      hasError: false,
       error: null,
       stacktrace: '',
     };
   }
 
-  static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI.
-    return {
-      hasError: true,
+  async componentDidCatch(error: Error) {
+    // Catch errors in any components below and re-render with error message
+    this.setState({
       error,
-    };
-  }
-
-  async componentDidUpdate(_prevProps, prevState) {
-    if (this.state.error && prevState.error !== this.state.error) {
-      this.setState({
-        stacktrace: formatStackTrace(await StackTrace.fromError(this.state.error)),
-      });
-    }
+      stacktrace: formatStackTrace(await StackTrace.fromError(error)),
+    });
+    // You can also log error messages to an error reporting service here
   }
 
   handleReload = () => {
     window.location.hash = '#/';
     window.location.reload();
-  }
+  };
 
   render() {
-    if (this.state.hasError) {
+    if (this.state.error) {
       const { stacktrace, error } = this.state;
       const issueLink = `https://github.com/Ball-Network/ballcoin-blockchain-gui/issues/new?${qs.stringify({
         labels: 'bug',
@@ -64,7 +58,7 @@ export default class ErrorBoundary extends Component {
         title: `[BUG] ${error.message}`,
         ui: 'GUI',
         logs: `${error.message}\n\nURL\n${window.location.hash}\n\nStacktrace\n${stacktrace}`,
-      })}`
+      })}`;
       // You can render any custom fallback UI
       return (
         <LayoutHero>
@@ -74,17 +68,17 @@ export default class ErrorBoundary extends Component {
             </Typography>
 
             <Flex flexDirection="column">
-              <Typography variant="h6" >
+              <Typography variant="h6">
                 <Trans>Error:</Trans> {error.message}
               </Typography>
-              <StyledPre variant="body2">
-                {stacktrace}
-              </StyledPre>
+              <StyledPre variant="body2">{stacktrace}</StyledPre>
             </Flex>
 
             <Flex justifyContent="center">
               <Link target="_blank" href={issueLink}>
-                <Button><Trans>Report an Issue</Trans></Button>
+                <Button>
+                  <Trans>Report an Issue</Trans>
+                </Button>
               </Link>
               &nbsp;
               <Button onClick={this.handleReload} color="primary">

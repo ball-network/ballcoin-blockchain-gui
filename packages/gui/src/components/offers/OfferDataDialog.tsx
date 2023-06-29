@@ -1,16 +1,7 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import {
-  Box,
-  Button,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  InputAdornment,
-  TextField,
-} from '@mui/material';
 import { CopyToClipboard, DialogActions } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Box, Button, Grid, Dialog, DialogTitle, DialogContent, InputAdornment, TextField } from '@mui/material';
+import React from 'react';
 
 type Props = {
   offerData: string;
@@ -19,11 +10,7 @@ type Props = {
 };
 
 export default function OfferDataDialog(props: Props) {
-  const {
-    onClose,
-    open,
-    offerData,
-  } = props;
+  const { onClose, open, offerData } = props;
 
   function handleClose() {
     onClose(false);
@@ -67,19 +54,10 @@ export default function OfferDataDialog(props: Props) {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={handleClose}
-          color="primary"
-          variant="outlined"
-        >
+        <Button onClick={handleClose} color="primary" variant="outlined">
           <Trans>OK</Trans>
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
-
-OfferDataDialog.defaultProps = {
-  open: false,
-  onClose: () => {},
-};

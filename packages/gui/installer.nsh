@@ -10,6 +10,8 @@ Var BallSquirrelInstallLocation
 Var BallSquirrelInstallVersion
 Var BallSquirrelUninstaller
 Var CheckboxUninstall
+Var CheckboxLaunchOnExit
+Var LaunchOnExit
 Var UninstallBallSquirrelInstall
 Var BackButton
 Var NextButton
@@ -48,12 +50,12 @@ Function detectOldBallVersion
     Abort
   ${EndIf}
 
-  !insertmacro MUI_HEADER_TEXT "Uninstall Old Version" "Would you like to uninstall the old version of Ball Blockchain?"
+  !insertmacro MUI_HEADER_TEXT "Uninstall Old Version" "Would you like to uninstall the old version of BallCoin Blockchain?"
 
-  ${NSD_CreateLabel} 0 35 100% 12u "Found Ball Blockchain $BallSquirrelInstallVersion installed in an old location:"
+  ${NSD_CreateLabel} 0 35 100% 12u "Found BallCoin Blockchain $BallSquirrelInstallVersion installed in an old location:"
   ${NSD_CreateLabel} 12 57 100% 12u "$BallSquirrelInstallLocation"
 
-  ${NSD_CreateCheckBox} 12 81 100% 12u "Uninstall Ball Blockchain $BallSquirrelInstallVersion"
+  ${NSD_CreateCheckBox} 12 81 100% 12u "Uninstall BallCoin Blockchain $BallSquirrelInstallVersion"
   Pop $CheckboxUninstall
   ${NSD_SetState} $CheckboxUninstall $UninstallBallSquirrelInstall
   ${NSD_OnClick} $CheckboxUninstall SetUninstall
@@ -85,15 +87,26 @@ Function finish
     Abort
   ${EndIf}
 
+  ${NSD_CreateCheckbox} 0 50% 100% 10% "Launch Ball"
+  Pop $CheckboxLaunchOnExit
+  ${NSD_SetState} $CheckboxLaunchOnExit ${BST_CHECKED}
+  ${NSD_OnClick} $CheckboxLaunchOnExit SetLaunchOnExit
+  StrCpy $LaunchOnExit 1
+
   GetDlgItem $NextButton $HWNDPARENT 1 ; 1 = Next button
   GetDlgItem $BackButton $HWNDPARENT 3 ; 3 = Back button
 
   ${NSD_CreateLabel} 0 35 100% 12u "Ball has been installed successfully!"
   EnableWindow $BackButton 0 ; Disable the Back button
-  SendMessage $NextButton ${WM_SETTEXT} 0 "STR:Let's Farm!" ; Button title is "Close" by default. Update it here.
+  SendMessage $NextButton ${WM_SETTEXT} 0 "STR:Finish" ; Button title is "Close" by default. Update it here.
 
   nsDialogs::Show
 
+FunctionEnd
+
+Function SetLaunchOnExit
+  ; Set LaunchOnExit accordingly
+  ${NSD_GetState} $CheckboxLaunchOnExit $LaunchOnExit
 FunctionEnd
 
 ; Copied from electron-builder NSIS templates
@@ -108,7 +121,9 @@ FunctionEnd
 
 Function finishLeave
   ; Launch the app at exit
-  Call StartApp
+  ${If} $LaunchOnExit == 1
+    Call StartApp
+  ${EndIf}
 FunctionEnd
 
 ; Section

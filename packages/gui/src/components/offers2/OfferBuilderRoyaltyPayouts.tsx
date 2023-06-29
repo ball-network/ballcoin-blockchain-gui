@@ -1,8 +1,8 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
 import { RoyaltyCalculationFungibleAssetPayout } from '@ball-network/api';
 import { CopyToClipboard, Flex } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { Box, Divider } from '@mui/material';
+import React from 'react';
 import styled from 'styled-components';
 
 const StyledTitle = styled(Box)`
@@ -22,9 +22,7 @@ export type OfferBuilderRoyaltyPayoutsProps = {
   royaltyPayments: Record<NFTId, RoyaltyCalculationFungibleAssetPayout>[];
 };
 
-export default function OfferBuilderRoyaltyPayouts(
-  props: OfferBuilderRoyaltyPayoutsProps,
-) {
+export default function OfferBuilderRoyaltyPayouts(props: OfferBuilderRoyaltyPayoutsProps) {
   const { totalAmount, originalAmount, royaltyPayments } = props;
 
   return (
@@ -43,7 +41,7 @@ export default function OfferBuilderRoyaltyPayouts(
       </Flex>
       {royaltyPayments.length > 0 && <Divider />}
       {royaltyPayments.map(({ nftId, payment }, i) => (
-        <Flex key={i} flexDirection="column" gap={1}>
+        <Flex key={nftId} flexDirection="column" gap={1}>
           <Flex flexDirection="row" alignItems="center" gap={1}>
             <Flex flexDirection="column" gap={0}>
               <StyledTitle>
@@ -62,11 +60,7 @@ export default function OfferBuilderRoyaltyPayouts(
               <StyledTitle>Royalty Recipient</StyledTitle>
               <StyledValue>{payment.address}</StyledValue>
             </Flex>
-            <CopyToClipboard
-              value={payment.address}
-              fontSize="small"
-              invertColor
-            />
+            <CopyToClipboard value={payment.address} fontSize="small" invertColor />
           </Flex>
           {i < royaltyPayments.length - 1 && <Divider />}
         </Flex>

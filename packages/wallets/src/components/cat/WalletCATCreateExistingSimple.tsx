@@ -1,12 +1,13 @@
-import React from 'react';
-import { Trans, t } from '@lingui/macro';
-import { Back, ButtonLoading, Card, Flex, Form, TextField } from '@ball-network/core';
-import { Grid } from '@mui/material';
+import { SyncingStatus } from '@ball-network/api';
 import { useAddCATTokenMutation } from '@ball-network/api-react';
+import { Back, ButtonLoading, Card, Flex, Form, TextField } from '@ball-network/core';
+import { Trans, t } from '@lingui/macro';
+import { Grid } from '@mui/material';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
+
 import useWalletState from '../../hooks/useWalletState';
-import { SyncingStatus } from '@ball-network/api';
 
 type CreateExistingCATWalletData = {
   name: string;
@@ -48,7 +49,6 @@ export default function WalletCATCreateExisting() {
     const walletId = await addCATToken({
       name,
       assetId,
-      fee: '0',
     }).unwrap();
 
     navigate(`/dashboard/wallets/${walletId}`);
@@ -65,34 +65,17 @@ export default function WalletCATCreateExisting() {
             <Grid xs={12} md={8} lg={6} item>
               <Grid spacing={2} container>
                 <Grid xs={12} item>
-                  <TextField
-                      name="name"
-                      variant="outlined"
-                      label={<Trans>Name</Trans>}
-                      fullWidth
-                      autoFocus
-                    />
+                  <TextField name="name" variant="outlined" label={<Trans>Name</Trans>} fullWidth autoFocus />
                 </Grid>
                 <Grid xs={12} item>
-                  <TextField
-                    name="assetId"
-                    variant="outlined"
-                    label={<Trans>Asset Id</Trans>}
-                    multiline
-                    fullWidth
-                  />
+                  <TextField name="assetId" variant="outlined" label={<Trans>Asset Id</Trans>} multiline fullWidth />
                 </Grid>
               </Grid>
             </Grid>
           </Grid>
         </Card>
         <Flex justifyContent="flex-end">
-          <ButtonLoading
-            type="submit"
-            variant="contained"
-            color="primary"
-            loading={isAddCATTokenLoading}
-          >
+          <ButtonLoading type="submit" variant="contained" color="primary" loading={isAddCATTokenLoading}>
             <Trans>Add</Trans>
           </ButtonLoading>
         </Flex>

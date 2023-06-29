@@ -25,7 +25,7 @@ export default function usePayoutAddress(nft: PlotNFT): {
     let newPayoutInstructions: string;
 
     try {
-      newPayoutInstructions = fromBech32m(newPayoutAddress)
+      newPayoutInstructions = fromBech32m(newPayoutAddress);
     } catch {
       newPayoutInstructions = newPayoutAddress;
     }
@@ -47,7 +47,7 @@ export default function usePayoutAddress(nft: PlotNFT): {
   let payoutAddress: string;
 
   try {
-    payoutAddress = toBech32m(payoutInstructions, networkPrefix)
+    payoutAddress = toBech32m(payoutInstructions, networkPrefix);
   } catch {
     payoutAddress = payoutInstructions;
   }

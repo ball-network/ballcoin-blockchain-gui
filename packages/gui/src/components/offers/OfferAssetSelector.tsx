@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
-import { useFormContext } from 'react-hook-form';
-import { Wallet, WalletType, type CATToken } from '@ball-network/api';
+import type { Wallet, CATToken } from '@ball-network/api';
+import { WalletType } from '@ball-network/api';
 import { useGetCatListQuery, useGetWalletsQuery } from '@ball-network/api-react';
+import { Select, useCurrencyCode } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import { FormControl, InputLabel, MenuItem } from '@mui/material';
-import { Select, useCurrencyCode } from '@ball-network/core';
+import React, { useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
+
 import type OfferEditorRowData from './OfferEditorRowData';
 
 type WalletOfferAssetSelection = {
@@ -26,34 +28,25 @@ type BuildAssetSelectorListParams = {
   ballCurrencyCode: string;
 };
 
-function buildAssetSelectorList(
-  params: BuildAssetSelectorListParams,
-): WalletOfferAssetSelection[] {
-  const {
-    wallets,
-    catList,
-    rows,
-    otherRows,
-    selectedWalletId,
-    ballCurrencyCode,
-  } = params;
+function buildAssetSelectorList(params: BuildAssetSelectorListParams): WalletOfferAssetSelection[] {
+  const { wallets, catList, rows, otherRows, selectedWalletId, ballCurrencyCode } = params;
   const list: WalletOfferAssetSelection[] = [];
   const usedWalletIds: Set<number> = new Set();
   const otherUsedWalletIds: Set<number> = new Set();
 
-  rows.map((row) => {
+  rows.forEach((row) => {
     if (row.assetWalletId > 0 && row.assetWalletId !== selectedWalletId) {
       usedWalletIds.add(row.assetWalletId);
     }
   });
 
-  otherRows.map((row) => {
+  otherRows.forEach((row) => {
     if (row.assetWalletId > 0) {
       otherUsedWalletIds.add(row.assetWalletId);
     }
   });
 
-  wallets.map((wallet) => {
+  wallets.forEach((wallet) => {
     const walletId: number = wallet.id;
     const walletType: WalletType = wallet.type;
     let name: string | undefined;
@@ -76,9 +69,7 @@ function buildAssetSelectorList(
     } else if (wallet.type === WalletType.CAT) {
       name = wallet.name;
       tail = wallet.meta.assetId;
-      const cat = catList.find(
-        (cat) => cat.assetId.toLowerCase() === tail?.toLowerCase(),
-      );
+      const cat = catList.find((catItem) => catItem.assetId.toLowerCase() === tail?.toLowerCase());
 
       if (cat) {
         symbol = cat.symbol;
@@ -112,18 +103,9 @@ type OfferAssetSelectorProps = {
 };
 
 function OfferAssetSelector(props: OfferAssetSelectorProps) {
-  const {
-    name,
-    id,
-    tradeSide,
-    defaultValue,
-    showAddWalletMessage,
-    onChange,
-    ...rest
-  } = props;
+  const { name, id, tradeSide, defaultValue, showAddWalletMessage, onChange, disabled = false, ...rest } = props;
   const { data: wallets, isLoading } = useGetWalletsQuery();
-  const { data: catList = [], isLoading: isCatListLoading } =
-    useGetCatListQuery();
+  const { data: catList = [], isLoading: isCatListLoading } = useGetCatListQuery();
   const { getValues, watch } = useFormContext();
   const currencyCode = useCurrencyCode();
   const rows = watch(tradeSide === 'buy' ? 'takerRows' : 'makerRows');
@@ -142,26 +124,23 @@ function OfferAssetSelector(props: OfferAssetSelectorProps) {
       selectedWalletId,
       ballCurrencyCode: currencyCode,
     });
-  }, [wallets, catList, rows, otherRows]);
+  }, [isLoading, isCatListLoading, wallets, catList, rows, otherRows, selectedWalletId, currencyCode]);
 
-  function handleSelection(
-    selectedWalletId: number,
-    selectedWalletType: WalletType,
-  ) {
+  function handleSelection(selectedWalletIdLocal: number, selectedWalletType: WalletType) {
     if (onChange) {
-      onChange(selectedWalletId, selectedWalletType);
+      onChange(selectedWalletIdLocal, selectedWalletType);
     }
   }
 
   return (
     // Form control with popup selection of assets
-    <FormControl variant="filled" fullWidth {...rest}>
+    <FormControl variant="filled" fullWidth disabled={disabled} {...rest}>
       <InputLabel required focused>
         <Trans>Asset Type</Trans>
       </InputLabel>
       <Select name={name} id={id} defaultValue={defaultValue || ''}>
         {showAddWalletMessage === true && (
-          <MenuItem disabled={true} value={-1} key={-1} onClick={() => {}}>
+          <MenuItem disabled value={-1} key={-1} onClick={() => {}}>
             <Trans>Add CAT wallets to have more options</Trans>
           </MenuItem>
         )}
@@ -179,10 +158,5 @@ function OfferAssetSelector(props: OfferAssetSelectorProps) {
     </FormControl>
   );
 }
-
-OfferAssetSelector.defaultProps = {
-  showAddWalletMessage: false,
-  disabled: false,
-};
 
 export default OfferAssetSelector;

@@ -1,12 +1,17 @@
+/* eslint-disable no-constant-condition -- Used for waiting for service to start */
+/* eslint-disable no-await-in-loop -- Used for waiting for service to start */
 import EventEmitter from 'events';
+
 import debug from 'debug';
-import ServiceName from './constants/ServiceName';
+
+import type Response from './@types/Response';
 import Message from './Message';
+import ConnectionState from './constants/ConnectionState';
+import ServiceName, { type ServiceNameValue } from './constants/ServiceName';
 import Daemon from './services/Daemon';
-import sleep from './utils/sleep';
 import type Service from './services/Service';
 import ErrorData from './utils/ErrorData';
-import ConnectionState from './constants/ConnectionState';
+import sleep from './utils/sleep';
 
 const log = debug('ball-api:client');
 
@@ -15,44 +20,57 @@ type Options = {
   cert: string;
   key: string;
   webSocket: any;
-  services?: ServiceName[];
+  services?: ServiceNameValue[];
   timeout?: number;
   camelCase?: boolean;
-  backupHost?: string;
   debug?: boolean;
 };
 
 export default class Client extends EventEmitter {
+  static isClient = true;
+
   private options: Required<Options>;
+
   private ws: any;
 
   private connected = false;
+
   private requests: Map<
     string,
     {
-      resolve: (value: Response) => void;
+      resolve: (value: Message) => void;
       reject: (reason: Error) => void;
     }
   > = new Map();
 
-  private services: Set<ServiceName> = new Set();
-  private started: Set<ServiceName> = new Set();
+  private services: Set<ServiceNameValue> = new Set();
+
+  private started: Set<ServiceNameValue> = new Set();
+
   private connectedPromise: Promise<void> | null = null;
+
+  private connectedPromiseResponse: { resolve: any; reject: any } | null = null;
+
+  private connectServicePromise: Map<ServiceNameValue, Promise<void>> = new Map();
 
   private daemon: Daemon;
 
   private closed = false;
+
   private state: ConnectionState = ConnectionState.DISCONNECTED;
+
   private reconnectAttempt = 0;
-  private startingService?: ServiceName;
+
+  private startingService?: ServiceNameValue;
 
   constructor(options: Options) {
     super();
 
+    this.setMaxListeners(100);
+
     this.options = {
       timeout: 60 * 1000 * 10, // 10 minutes
       camelCase: true,
-      backupHost: 'https://backup.ballcoin.top',
       debug: false,
       services: [],
       ...options,
@@ -78,7 +96,7 @@ export default class Client extends EventEmitter {
     state: ConnectionState;
     attempt: number;
     startingService?: string;
-    startedServices: ServiceName[];
+    startedServices: ServiceNameValue[];
   } {
     return {
       state: this.state,
@@ -88,7 +106,7 @@ export default class Client extends EventEmitter {
     };
   }
 
-  changeState(state: ConnectionState) {
+  private changeState(state: ConnectionState) {
     log(`Connection state changed: ${state}`);
     if (state === ConnectionState.CONNECTING && state === this.state) {
       this.reconnectAttempt += 1;
@@ -105,9 +123,7 @@ export default class Client extends EventEmitter {
     this.emit('state', this.getState());
   }
 
-  onStateChange(
-    callback: (state: { state: ConnectionState; attempt: number }) => void
-  ) {
+  onStateChange(callback: (state: { state: ConnectionState; attempt: number }) => void) {
     this.on('state', callback);
 
     return () => {
@@ -119,19 +135,17 @@ export default class Client extends EventEmitter {
     return ServiceName.EVENTS;
   }
 
-  get backupHost() {
-    return this.options.backupHost;
-  }
-
   get debug(): boolean {
     return this.options.debug;
   }
 
-  isStarted(serviceName: ServiceName) {
-    return this.started.has(serviceName);
+  isStarted(args: { service: ServiceNameValue }) {
+    const { service } = args;
+    return this.started.has(service);
   }
 
-  addService(service: Service) {
+  addService(args: { service: Service }) {
+    const { service } = args;
     if (!this.services.has(service.name)) {
       this.services.add(service.name);
     }
@@ -140,7 +154,7 @@ export default class Client extends EventEmitter {
   async connect(reconnect?: boolean) {
     if (this.closed) {
       log('Client is permanently closed');
-      return;
+      return undefined;
     }
 
     if (this.connectedPromise && !reconnect) {
@@ -188,44 +202,54 @@ export default class Client extends EventEmitter {
     return this.connectedPromise;
   }
 
-  async startService(serviceName: ServiceName, disableWait?: boolean) {
-    if (this.started.has(serviceName)) {
-      return;
-    }
+  async startService(args: { service: ServiceNameValue; disableWait?: boolean }) {
+    const { service, disableWait } = args;
 
-    const response = await this.daemon.isRunning(serviceName);
-    if (!response.isRunning) {
-      log(`Starting service: ${serviceName}`);
-      await this.daemon.startService(serviceName);
-    }
-
-    // wait for service initialisation
-    log(`Waiting for ping from service: ${serviceName}`);
-    if (!disableWait) {
-      while (true) {
-        try {
-          const { data: pingResponse } = await this.send(
-            new Message({
-              command: 'ping',
-              origin: this.origin,
-              destination: serviceName,
-            }),
-            1000
-          );
-
-          if (pingResponse.success) {
-            break;
-          }
-        } catch (error) {
-          await sleep(1000);
-        }
+    const startServiceAction = async () => {
+      if (this.started.has(service)) {
+        return;
       }
 
-      log(`Service: ${serviceName} started`);
-    }
+      const response = await this.daemon.isRunning({ service });
+      if (!response.isRunning) {
+        log(`Starting service: ${service}`);
+        await this.daemon.startService({ service });
+      }
 
-    this.started.add(serviceName);
-    this.emit('state', this.getState());
+      // wait for service initialisation
+      log(`Waiting for ping from service: ${service}`);
+      if (!disableWait) {
+        while (true) {
+          try {
+            const { data } = <Message & { data: Response }>await this.send(
+              new Message({
+                command: 'ping',
+                origin: this.origin,
+                destination: service,
+              }),
+              1000
+            );
+
+            if (data.success) {
+              break;
+            }
+          } catch (error) {
+            await sleep(1000);
+          }
+        }
+
+        log(`Service: ${service} started`);
+      }
+
+      this.started.add(service);
+      this.emit('state', this.getState());
+    };
+
+    const startServiceTask = startServiceAction();
+    this.connectServicePromise.set(service, startServiceTask);
+    await startServiceTask.finally(() => {
+      this.connectServicePromise.delete(service);
+    });
   }
 
   private async startServices() {
@@ -235,38 +259,35 @@ export default class Client extends EventEmitter {
 
     const services = Array.from(this.services);
 
-    await Promise.all(
-      services.map(async (serviceName) => {
-        return this.startService(serviceName);
-      })
-    );
+    await Promise.all(services.map(async (service) => this.startService({ service })));
   }
 
-  async stopService(serviceName: ServiceName) {
-    if (!this.started.has(serviceName)) {
+  async stopService(args: { service: ServiceNameValue }) {
+    const { service } = args;
+    if (!this.started.has(service)) {
       return;
     }
 
-    const response = await this.daemon.isRunning(serviceName);
+    const response = await this.daemon.isRunning({ service });
     if (response.isRunning) {
-      log(`Closing down service: ${serviceName}`);
-      await this.daemon.stopService(serviceName);
+      log(`Closing down service: ${service}`);
+      await this.daemon.stopService({ service });
     }
 
     // wait for service initialisation
-    log(`Waiting for service: ${serviceName}`);
+    log(`Waiting for service: ${service}`);
     while (true) {
       try {
-        const { data: pingResponse } = await this.send(
+        const { data } = <Message & { data: Response }>await this.send(
           new Message({
             command: 'ping',
             origin: this.origin,
-            destination: serviceName,
+            destination: service,
           }),
           1000
         );
 
-        if (pingResponse.success) {
+        if (data.success) {
           await sleep(1000);
         }
       } catch (error) {
@@ -274,9 +295,10 @@ export default class Client extends EventEmitter {
       }
     }
 
-    log(`Service: ${serviceName} stopped`);
+    log(`Service: ${service} stopped`);
 
-    this.started.delete(serviceName);
+    this.started.delete(service);
+    this.connectServicePromise.delete(service);
     this.emit('state', this.getState());
   }
 
@@ -297,26 +319,24 @@ export default class Client extends EventEmitter {
     }
   };
 
-  registerService(service: ServiceName) {
-    return this.daemon.registerService(service);
+  registerService(serviceName: ServiceNameValue) {
+    return this.daemon.registerService({ service: serviceName });
   }
 
   private handleClose = () => {
     this.connected = false;
     this.connectedPromise = null;
+    this.connectServicePromise.clear();
 
     this.requests.forEach((request) => {
       request.reject(new Error(`Connection closed`));
     });
   };
 
-  private handleError = async (error: any) => {
+  private handleError = async () => {
     if (this.connectedPromiseResponse) {
       await sleep(1000);
       this.connect(true);
-      return;
-      // this.connectedPromiseResponse.reject(error);
-      // this.connectedPromiseResponse = null;
     }
   };
 
@@ -326,21 +346,22 @@ export default class Client extends EventEmitter {
     } = this;
 
     log('Received message', data.toString());
-    const message = Message.fromJSON(data, camelCase);
+    const message = <Message & { data: Response }>Message.fromJSON(data, camelCase);
 
     const { requestId } = message;
 
-    if (this.requests.has(requestId)) {
-      const { resolve, reject } = this.requests.get(requestId);
+    const request = this.requests.get(requestId);
+    if (request) {
+      const { resolve, reject } = request;
       this.requests.delete(requestId);
 
       if (message.data?.error) {
         let errorMessage = message.data.error;
 
-        if (errorMessage == '13') {
+        if (errorMessage === '13') {
           errorMessage =
             '[Error 13] Permission denied. You are trying to access a file/directory without having the necessary permissions. Most likely one of the plot folders in your config.yaml has an issue.';
-        } else if (errorMessage == '22') {
+        } else if (errorMessage === '22') {
           errorMessage =
             '[Error 22] File not found. Most likely one of the plot folders in your config.yaml has an issue.';
         } else if (message?.data?.errorDetails?.message) {
@@ -353,14 +374,9 @@ export default class Client extends EventEmitter {
         return;
       }
 
-      if (message.data?.success === false) {
+      if (message.data?.success !== true) {
         log(`Request ${requestId} rejected`, 'Unknown error message');
-        reject(
-          new ErrorData(
-            `Request ${requestId} failed: ${JSON.stringify(message.data)}`,
-            message.data
-          )
-        );
+        reject(new ErrorData(`Request ${requestId} failed: ${JSON.stringify(message.data)}`, message.data));
         return;
       }
 
@@ -371,11 +387,7 @@ export default class Client extends EventEmitter {
     }
   };
 
-  async send(
-    message: Message,
-    timeout?: number,
-    disableFormat?: boolean
-  ): Promise<Response> {
+  async send(message: Message, timeout?: number, disableFormat?: boolean): Promise<Message> {
     const {
       connected,
       options: { timeout: defaultTimeout, camelCase },
@@ -386,6 +398,13 @@ export default class Client extends EventEmitter {
     if (!connected) {
       log('API is not connected trying to connect');
       await this.connect();
+    }
+
+    if (message.destination !== ServiceName.DAEMON && message.command !== 'ping') {
+      const isServiceLaunching = this.connectServicePromise.has(message.destination);
+      if (isServiceLaunching) {
+        await this.connectServicePromise.get(message.destination);
+      }
     }
 
     return new Promise((resolve, reject) => {
@@ -403,11 +422,7 @@ export default class Client extends EventEmitter {
             this.requests.delete(requestId);
 
             reject(
-              new ErrorData(
-                `The request ${requestId} has timed out ${
-                  currentTimeout / 1000
-                } seconds.`
-              )
+              new ErrorData(`The request ${requestId} has timed out ${currentTimeout / 1000} seconds.`, undefined)
             );
           }
         }, currentTimeout);
@@ -415,7 +430,8 @@ export default class Client extends EventEmitter {
     });
   }
 
-  async close(force: true) {
+  async close(args: { force?: boolean }) {
+    const { force = false } = args;
     if (force) {
       this.closed = true;
     }
@@ -424,11 +440,7 @@ export default class Client extends EventEmitter {
       return;
     }
 
-    await Promise.all(
-      Array.from(this.started).map(async (serviceName) => {
-        return await this.stopService(serviceName);
-      })
-    );
+    await Promise.all(Array.from(this.started).map(async (service) => this.stopService({ service })));
 
     await this.daemon.exit();
 

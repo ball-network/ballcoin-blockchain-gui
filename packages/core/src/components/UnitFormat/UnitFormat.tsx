@@ -1,6 +1,7 @@
 import React from 'react';
-import useCurrencyCode from '../../hooks/useCurrencyCode';
+
 import State from '../../constants/State';
+import useCurrencyCode from '../../hooks/useCurrencyCode';
 import StateTypography from '../StateTypography';
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export default function UnitFormat(props: Props) {
-  const { value, variant, state, ...rest } = props;
+  const { value, variant = 'body1', state, ...rest } = props;
   const currencyCode = useCurrencyCode();
 
   return (
@@ -19,7 +20,3 @@ export default function UnitFormat(props: Props) {
     </StateTypography>
   );
 }
-
-UnitFormat.defaultProps = {
-  variant: 'body1',
-};

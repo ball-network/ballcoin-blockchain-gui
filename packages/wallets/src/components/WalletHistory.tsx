@@ -1,23 +1,10 @@
-import React, { useMemo } from 'react';
-import { Trans } from '@lingui/macro';
-import moment from 'moment';
+import { WalletType, TransactionType, toBech32m } from '@ball-network/api';
+import type { Transaction } from '@ball-network/api';
 import {
-  Box,
-  IconButton,
-  Table as TableBase,
-  TableBody,
-  TableCell,
-  TableRow,
-  Tooltip,
-  Typography,
-  Chip,
-} from '@mui/material';
-import {
-  CallReceived as CallReceivedIcon,
-  CallMade as CallMadeIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
+  useGetOfferRecordMutation,
+  useGetSyncStatusQuery,
+  useGetTransactionMemoMutation,
+} from '@ball-network/api-react';
 import {
   Card,
   CopyToClipboard,
@@ -29,14 +16,31 @@ import {
   mojoToBall,
   mojoToCAT,
   FormatLargeNumber,
+  truncateValue,
 } from '@ball-network/core';
-import {
-  useGetOfferRecordMutation,
-  useGetSyncStatusQuery,
-} from '@ball-network/api-react';
-import styled from 'styled-components';
 import type { Row } from '@ball-network/core';
-import { WalletType, TransactionType, toBech32m } from '@ball-network/api';
+import { Trans } from '@lingui/macro';
+import {
+  CallReceived as CallReceivedIcon,
+  CallMade as CallMadeIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+} from '@mui/icons-material';
+import {
+  Box,
+  IconButton,
+  Table as TableBase,
+  TableBody,
+  TableCell,
+  TableRow,
+  Tooltip,
+  Typography,
+  Chip,
+} from '@mui/material';
+import moment from 'moment';
+import React, { useMemo } from 'react';
+import styled from 'styled-components';
+
 import useWallet from '../hooks/useWallet';
 import useWalletTransactions from '../hooks/useWalletTransactions';
 
@@ -60,16 +64,20 @@ async function handleRowClick(
   event: React.MouseEvent<HTMLTableRowElement>,
   row: Row,
   getOfferRecord,
-  navigate
+  navigate,
+  location
 ) {
   if (row.tradeId) {
     try {
-      const { data: response } = await getOfferRecord(row.tradeId);
-      const { tradeRecord, success } = response;
+      const { data: response } = await getOfferRecord({ offerId: row.tradeId });
+      const {
+        tradeRecord: { summary },
+        success,
+      } = response;
 
-      if (success === true && tradeRecord) {
+      if (success === true && summary && navigate && location) {
         navigate('/dashboard/offers/view', {
-          state: { tradeRecord: tradeRecord },
+          state: { offerSummary: summary, imported: false, isMyOffer: false, referrerPath: location.pathname },
         });
       }
     } catch (e) {
@@ -78,116 +86,19 @@ async function handleRowClick(
   }
 }
 
-const getCols = (type: WalletType, isSyncing, getOfferRecord, navigate) => [
+const getCols = (type: WalletType, isSyncing, getOfferRecord, navigate, location) => [
   {
     field: (row: Row) => {
-      const isOutgoing = [
-        TransactionType.OUTGOING,
-        TransactionType.OUTGOING_TRADE,
-      ].includes(row.type);
+      const isOutgoing = [TransactionType.OUTGOING, TransactionType.OUTGOING_TRADE].includes(row.type);
 
       return (
         <Flex gap={1}>
-          <Tooltip
-            title={
-              isOutgoing ? <Trans>Outgoing</Trans> : <Trans>Incoming</Trans>
-            }
-          >
-            {isOutgoing ? (
-              <CallMadeIcon color="secondary" />
-            ) : (
-              <CallReceivedIcon color="primary" />
-            )}
+          <Tooltip title={isOutgoing ? <Trans>Outgoing</Trans> : <Trans>Incoming</Trans>}>
+            {isOutgoing ? <CallMadeIcon color="secondary" /> : <CallReceivedIcon color="primary" />}
           </Tooltip>
         </Flex>
       );
     },
-  },
-  {
-    width: '100%',
-    field: (row: Row, metadata) => {
-      const { confirmed: isConfirmed, memos } = row;
-      const hasMemos = !!memos && !!Object.values(memos).length;
-      const isRetire = row.toAddress === metadata.retireAddress;
-      const isOffer = row.toAddress === metadata.offerTakerAddress;
-      const shouldObscureAddress = isRetire || isOffer;
-
-      return (
-        <Flex
-          flexDirection="column"
-          gap={1}
-          onClick={(event) => {
-            if (!isSyncing) {
-              handleRowClick(event, row, getOfferRecord, navigate);
-            }
-          }}
-        >
-          <Tooltip
-            title={
-              <Flex flexDirection="column" gap={1}>
-                {shouldObscureAddress && (
-                  <StyledWarning>
-                    <Trans>
-                      This is not a valid address for sending funds to
-                    </Trans>
-                  </StyledWarning>
-                )}
-                <Flex flexDirection="row" alignItems="center" gap={1}>
-                  <Box maxWidth={200}>{row.toAddress}</Box>
-                  {!shouldObscureAddress && (
-                    <CopyToClipboard value={row.toAddress} fontSize="small" />
-                  )}
-                </Flex>
-              </Flex>
-            }
-          >
-            <span>
-              {shouldObscureAddress
-                ? row.toAddress.slice(0, 20) + '...'
-                : row.toAddress}
-            </span>
-          </Tooltip>
-          <Flex gap={0.5}>
-            {isConfirmed ? (
-              <Chip
-                size="small"
-                variant="outlined"
-                label={<Trans>Confirmed</Trans>}
-              />
-            ) : (
-              <Chip
-                size="small"
-                color="primary"
-                variant="outlined"
-                label={<Trans>Pending</Trans>}
-              />
-            )}
-            {hasMemos && (
-              <Chip
-                size="small"
-                variant="outlined"
-                label={<Trans>Memo</Trans>}
-              />
-            )}
-            {isRetire && (
-              <Chip
-                size="small"
-                variant="outlined"
-                label={<Trans>Retire</Trans>}
-              />
-            )}
-            {isOffer && (
-              <Chip
-                size="small"
-                variant="outlined"
-                label={<Trans>Offer Accepted</Trans>}
-              />
-            )}
-          </Flex>
-        </Flex>
-      );
-    },
-    title: <Trans>To</Trans>,
   },
   {
     field: (row: Row) => (
@@ -196,26 +107,18 @@ const getCols = (type: WalletType, isSyncing, getOfferRecord, navigate) => [
       </Typography>
     ),
     title: <Trans>Date</Trans>,
+    forceWrap: true,
   },
   {
     field: (row: Row, metadata) => {
-      const isOutgoing = [
-        TransactionType.OUTGOING,
-        TransactionType.OUTGOING_TRADE,
-      ].includes(row.type);
+      const isOutgoing = [TransactionType.OUTGOING, TransactionType.OUTGOING_TRADE].includes(row.type);
 
       return (
         <>
           <strong>{isOutgoing ? <Trans>-</Trans> : <Trans>+</Trans>}</strong>
           &nbsp;
           <strong>
-            <FormatLargeNumber
-              value={
-                type === WalletType.CAT
-                  ? mojoToCAT(row.amount)
-                  : mojoToBall(row.amount)
-              }
-            />
+            <FormatLargeNumber value={type === WalletType.CAT ? mojoToCAT(row.amount) : mojoToBall(row.amount)} />
           </strong>
           &nbsp;
           {metadata.unit}
@@ -237,8 +140,60 @@ const getCols = (type: WalletType, isSyncing, getOfferRecord, navigate) => [
     title: <Trans>Fee</Trans>,
   },
   {
+    field: (row: Row, metadata) => {
+      const { confirmed: isConfirmed, memos } = row;
+      const hasMemos = !!memos && !!Object.keys(memos).length && !!memos[Object.keys(memos)[0]];
+      const isRetire = row.toAddress === metadata.retireAddress;
+      const isOffer = row.toAddress === metadata.offerTakerAddress;
+      const shouldObscureAddress = isRetire || isOffer;
+
+      return (
+        <Flex
+          flexDirection="column"
+          gap={1}
+          onClick={(event) => {
+            if (!isSyncing) {
+              handleRowClick(event, row, getOfferRecord, navigate, location);
+            }
+          }}
+        >
+          <Tooltip
+            title={
+              <Flex flexDirection="column" gap={1}>
+                {shouldObscureAddress && (
+                  <StyledWarning>
+                    <Trans>This is not a valid address for sending funds to</Trans>
+                  </StyledWarning>
+                )}
+                <Flex flexDirection="row" alignItems="center" gap={1}>
+                  <Box maxWidth={200}>{row.toAddress}</Box>
+                  {!shouldObscureAddress && <CopyToClipboard value={row.toAddress} fontSize="small" />}
+                </Flex>
+              </Flex>
+            }
+          >
+            <span>{truncateValue(row.toAddress, {})}</span>
+          </Tooltip>
+          <Flex gap={0.5}>
+            {isConfirmed ? (
+              <Chip size="small" variant="outlined" label={<Trans>Confirmed</Trans>} />
+            ) : (
+              <Chip size="small" color="primary" variant="outlined" label={<Trans>Pending</Trans>} />
+            )}
+            {hasMemos && <Chip size="small" variant="outlined" label={<Trans>Memo</Trans>} />}
+            {isRetire && <Chip size="small" variant="outlined" label={<Trans>Retire</Trans>} />}
+            {isOffer && <Chip size="small" variant="outlined" label={<Trans>Offer Accepted</Trans>} />}
+          </Flex>
+        </Flex>
+      );
+    },
+    title: <Trans>To</Trans>,
+  },
+
+  {
+    width: '66px',
     field: (row: Row, _metadata, isExpanded, toggleExpand) => (
-      <IconButton aria-label="expand row" size="small" onClick={toggleExpand}>
+      <IconButton aria-label="expand row" size="small" onClick={() => toggleExpand(row)}>
         {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
       </IconButton>
     ),
@@ -249,47 +204,48 @@ type Props = {
   walletId: number;
 };
 
+const mapMemos: any = {};
+
 export default function WalletHistory(props: Props) {
   const { walletId } = props;
 
-  const { data: walletState, isLoading: isWalletSyncLoading } =
-    useGetSyncStatusQuery(
-      {},
-      {
-        pollingInterval: 10000,
-      }
-    );
+  const { data: walletState, isLoading: isWalletSyncLoading } = useGetSyncStatusQuery(
+    {},
+    {
+      pollingInterval: 10_000,
+    }
+  );
   const { wallet, loading: isWalletLoading, unit } = useWallet(walletId);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const {
-    transactions,
+    transactions: transactionWithoutIncomingMemos,
     isLoading: isWalletTransactionsLoading,
     page,
     rowsPerPage,
     count,
     pageChange,
   } = useWalletTransactions(walletId, 10, 0, 'RELEVANCE');
+
+  React.useEffect(() => {
+    if (!isWalletTransactionsLoading) {
+      setTransactions(transactionWithoutIncomingMemos ?? []);
+    }
+  }, [transactionWithoutIncomingMemos, isWalletTransactionsLoading]);
+
   const feeUnit = useCurrencyCode();
   const [getOfferRecord] = useGetOfferRecordMutation();
-  const { navigate } = useSerializedNavigationState();
+  const { navigate, location } = useSerializedNavigationState();
+  const [getTransactionMemo] = useGetTransactionMemoMutation();
 
   const isLoading = isWalletTransactionsLoading || isWalletLoading;
-  const isSyncing =
-    isWalletSyncLoading || !walletState || !!walletState?.syncing;
+  const isSyncing = isWalletSyncLoading || !walletState || !!walletState?.syncing;
 
   const metadata = useMemo(() => {
     const retireAddress =
-      feeUnit &&
-      toBech32m(
-        '0000000000000000000000000000000000000000000000000000000000000000',
-        feeUnit
-      );
+      feeUnit && toBech32m('0000000000000000000000000000000000000000000000000000000000000000', feeUnit);
 
     const offerTakerAddress =
-      feeUnit &&
-      toBech32m(
-        '0101010101010101010101010101010101010101010101010101010101010101',
-        feeUnit
-      );
+      feeUnit && toBech32m('0101010101010101010101010101010101010101010101010101010101010101', feeUnit);
 
     return {
       unit,
@@ -304,8 +260,8 @@ export default function WalletHistory(props: Props) {
       return [];
     }
 
-    return getCols(wallet.type, isSyncing, getOfferRecord, navigate);
-  }, [wallet?.type]);
+    return getCols(wallet.type, isSyncing, getOfferRecord, navigate, location);
+  }, [getOfferRecord, isSyncing, navigate, wallet, location]);
 
   return (
     <Card title={<Trans>Transactions</Trans>} titleVariant="h6" transparent>
@@ -321,12 +277,38 @@ export default function WalletHistory(props: Props) {
         metadata={metadata}
         expandedCellShift={1}
         uniqueField="name"
+        onToggleExpand={async (rowId: string, wasExpanded: boolean, rowData: Transaction) => {
+          const { name: transactionId, type: transactionType } = rowData ?? {};
+          let { memos } = rowData ?? {};
+
+          // We're only interested in attempting to load memos if expanding an incoming txn and the txn doesn't already have memos
+          if (!wasExpanded || transactionType !== TransactionType.INCOMING || Object.keys(memos).length > 0) {
+            return;
+          }
+
+          // Use previously cached memos if available
+          memos = mapMemos[rowId];
+
+          // memos is null if we've already tried to fetch memos for this txn and there weren't any
+          if (!memos && memos !== null) {
+            memos = (await getTransactionMemo({ transactionId })).data;
+            mapMemos[rowId] = memos ?? null;
+          }
+
+          const newTransactions = transactions.map((transaction) =>
+            transaction.name === transactionId && memos && Object.keys(memos).length > 0
+              ? { ...transaction, memos }
+              : transaction
+          );
+          setTransactions(newTransactions);
+        }}
+        // eslint-disable-next-line react/no-unstable-nested-components -- It would be risky to refactor without tests
         expandedField={(row) => {
           const { confirmedAtHeight, memos } = row;
           const memoValues = memos ? Object.values(memos) : [];
           const memoValuesDecoded = memoValues.map((memoHex) => {
             try {
-              const buf = new Buffer(memoHex, 'hex');
+              const buf = Buffer.from(memoHex, 'hex');
               const decodedValue = buf.toString('utf8');
 
               const bufCheck = Buffer.from(decodedValue, 'utf8');
@@ -344,6 +326,7 @@ export default function WalletHistory(props: Props) {
             memoValuesDecoded && memoValuesDecoded.length ? (
               <Flex flexDirection="column">
                 {memoValuesDecoded.map((memo, index) => (
+                  // eslint-disable-next-line react/no-array-index-key -- There is no ID to use
                   <Typography variant="inherit" key={index}>
                     {memo ?? ''}
                   </Typography>
@@ -357,11 +340,7 @@ export default function WalletHistory(props: Props) {
             confirmedAtHeight && {
               key: 'confirmedAtHeight',
               label: <Trans>Confirmed at Height</Trans>,
-              value: confirmedAtHeight ? (
-                confirmedAtHeight
-              ) : (
-                <Trans>Not Available</Trans>
-              ),
+              value: confirmedAtHeight || <Trans>Not Available</Trans>,
             },
             {
               key: 'memos',
@@ -373,22 +352,17 @@ export default function WalletHistory(props: Props) {
           return (
             <TableBase size="small">
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.key}>
+                {rows.map((rowItem) => (
+                  <TableRow key={rowItem.key}>
                     <StyledTableCellSmall>
-                      <Typography
-                        component="div"
-                        variant="body2"
-                        color="textSecondary"
-                        noWrap
-                      >
-                        {row.label}
+                      <Typography component="div" variant="body2" color="textSecondary" noWrap>
+                        {rowItem.label}
                       </Typography>
                     </StyledTableCellSmall>
                     <StyledTableCellSmallRight>
                       <Box maxWidth="100%">
                         <Typography component="div" variant="body2" noWrap>
-                          {row.value}
+                          {rowItem.value}
                         </Typography>
                       </Box>
                     </StyledTableCellSmallRight>

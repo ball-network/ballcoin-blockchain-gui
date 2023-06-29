@@ -1,11 +1,14 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { Loading, State, StateIndicator } from '@ball-network/core';
-import { useGetSyncStatusQuery } from '@ball-network/api-react';
-import { Box, Typography } from '@mui/material';
-import getWalletSyncingStatus from '../../utils/getWalletSyncingStatus';
 import { SyncingStatus } from '@ball-network/api';
-import WalletStatusHeight from './WalletStatusHeight';
+import { useGetSyncStatusQuery } from '@ball-network/api-react';
+// import { Trans } from '@lingui/macro';
+import { Box, Typography } from '@mui/material';
+import React from 'react';
+
+import Loading from '../../components/Loading';
+import StateIndicator from '../../components/StateIndicator';
+import State from '../../constants/State';
+import getWalletSyncingStatus from '../../utils/getWalletSyncingStatus';
+// import WalletStatusHeight from './WalletStatusHeight';
 
 export type WalletStatusProps = {
   variant?: string;
@@ -21,7 +24,7 @@ export type WalletStatusProps = {
 export default function WalletStatus(props: WalletStatusProps) {
   const {
     variant = 'body1',
-    height = false,
+    // height = false,
     indicator = false,
     reversed = false,
     color,
@@ -33,7 +36,7 @@ export default function WalletStatus(props: WalletStatusProps) {
   const { data: walletState, isLoading } = useGetSyncStatusQuery(
     {},
     {
-      pollingInterval: 10000,
+      pollingInterval: 10_000,
     }
   );
 
@@ -54,9 +57,7 @@ export default function WalletStatus(props: WalletStatusProps) {
           color={color}
           gap={gap}
           hideTitle={hideTitle}
-        >
-          <Trans>Not Synced</Trans> {height && <WalletStatusHeight />}
-        </StateIndicator>
+        />
       )}
       {syncingStatus === SyncingStatus.SYNCED && (
         <StateIndicator
@@ -66,9 +67,7 @@ export default function WalletStatus(props: WalletStatusProps) {
           color={color}
           gap={gap}
           hideTitle={hideTitle}
-        >
-          <Trans>Synced</Trans> {height && <WalletStatusHeight />}
-        </StateIndicator>
+        />
       )}
       {syncingStatus === SyncingStatus.SYNCING && (
         <StateIndicator
@@ -78,9 +77,7 @@ export default function WalletStatus(props: WalletStatusProps) {
           color={color}
           gap={gap}
           hideTitle={hideTitle}
-        >
-          <Trans>Syncing</Trans> {height && <WalletStatusHeight />}
-        </StateIndicator>
+        />
       )}
     </Tag>
   );

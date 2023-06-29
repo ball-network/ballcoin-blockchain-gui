@@ -1,13 +1,11 @@
 import type { NFTInfo } from '@ball-network/api';
 import { store, walletApi } from '@ball-network/api-react';
 import BigNumber from 'bignumber.js';
-import { launcherIdFromNFTId } from './nfts';
-import type Driver from '../@types/Driver';
 
-export async function prepareNFTOfferFromNFTId(
-  nftId: string,
-  offeredNFT: boolean,
-) {
+import type Driver from '../@types/Driver';
+import { launcherIdFromNFTId } from './nfts';
+
+export async function prepareNFTOfferFromNFTId(nftId: string, offeredNFT: boolean) {
   const launcherId = launcherIdFromNFTId(nftId);
   if (!launcherId) {
     throw new Error('Invalid NFT ID');
@@ -17,7 +15,7 @@ export async function prepareNFTOfferFromNFTId(
   const resultPromise = store.dispatch(
     walletApi.endpoints.getNFTInfo.initiate({
       coinId: launcherId ?? '',
-    }),
+    })
   );
 
   const result = await resultPromise;
@@ -26,7 +24,7 @@ export async function prepareNFTOfferFromNFTId(
   resultPromise.unsubscribe();
 
   if (result.error) {
-    throw result.error;
+    throw result.error as Error;
   }
 
   const nft = result.data;

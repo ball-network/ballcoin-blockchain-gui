@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
-import { Trans } from '@lingui/macro';
-import { useCurrencyCode, mojoToBallLocaleString, CardSimple, useLocale } from '@ball-network/core';
 import { useGetFarmedAmountQuery } from '@ball-network/api-react';
+import { useCurrencyCode, mojoToBallLocaleString, CardSimple, useLocale } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import React, { useMemo } from 'react';
 
 export default function FarmCardUserFees() {
   const currencyCode = useCurrencyCode();
@@ -20,6 +20,7 @@ export default function FarmCardUserFees() {
         </>
       );
     }
+    return undefined;
   }, [feeAmount, locale, currencyCode]);
 
   return (

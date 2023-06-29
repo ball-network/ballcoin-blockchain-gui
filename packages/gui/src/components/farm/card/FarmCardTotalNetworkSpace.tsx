@@ -1,7 +1,7 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { FormatBytes, CardSimple } from '@ball-network/core';
 import { useGetBlockchainStateQuery } from '@ball-network/api-react';
+import { FormatBytes, CardSimple } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import React from 'react';
 
 export default function FarmCardTotalNetworkSpace() {
   const { data, isLoading, error } = useGetBlockchainStateQuery();

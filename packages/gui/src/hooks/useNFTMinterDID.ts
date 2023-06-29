@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useGetNFTInfoQuery } from '@ball-network/api-react';
-import { launcherIdFromNFTId } from '../util/nfts';
-import { stripHexPrefix } from '../util/utils';
+
 import { didToDIDId } from '../util/dids';
+import removeHexPrefix from '../util/removeHexPrefix';
+import useNFT from './useNFT';
 
 export type UseNFTMinterDIDResult = {
   didId: string | undefined;
@@ -13,12 +13,7 @@ export type UseNFTMinterDIDResult = {
 };
 
 export default function useNFTMinterDID(nftId: string): UseNFTMinterDIDResult {
-  const launcherId = launcherIdFromNFTId(nftId);
-  const {
-    data: nft,
-    isLoading,
-    error,
-  } = useGetNFTInfoQuery({ coinId: launcherId ?? '' });
+  const { nft, isLoading, error } = useNFT(nftId);
 
   const [didId, hexDIDId, didName] = useMemo(() => {
     if (!nft) {
@@ -28,18 +23,15 @@ export default function useNFTMinterDID(nftId: string): UseNFTMinterDIDResult {
     if (!minterDid) {
       return [];
     }
-    const hexDIDId = stripHexPrefix(minterDid);
-    const didId = didToDIDId(hexDIDId);
-    let didName;
+    const hexDIDIdLocal = removeHexPrefix(minterDid);
+    const didIdLocal = didToDIDId(hexDIDIdLocal);
+    let didNameLocal;
 
-    if (
-      didId ===
-      'did:ball:19qf3g9876t0rkq7tfdkc28cxfy424yzanea29rkzylq89kped9hq3q7wd2'
-    ) {
-      didName = 'Ball Network';
+    if (didIdLocal === 'did:ball:19qf3g9876t0rkq7tfdkc28cxfy424yzanea29rkzylq89kped9hq3q7wd2') {
+      didNameLocal = 'Ball Network';
     }
 
-    return [didId, hexDIDId, didName];
+    return [didIdLocal, hexDIDIdLocal, didNameLocal];
   }, [nft]);
 
   return { didId, hexDIDId, didName, isLoading, error };

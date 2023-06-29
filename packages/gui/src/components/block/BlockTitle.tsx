@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
 import { Flex } from '@ball-network/core';
 import { ArrowBackIos as ArrowBackIosIcon } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const BackIcon = styled(ArrowBackIosIcon)`
@@ -28,7 +28,3 @@ export default function BlockTitle(props: Props) {
     </Flex>
   );
 }
-
-BlockTitle.defaultProps = {
-  children: undefined,
-};

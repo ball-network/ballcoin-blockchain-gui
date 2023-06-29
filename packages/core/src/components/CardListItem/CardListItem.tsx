@@ -1,45 +1,8 @@
-import React, { type ReactNode } from 'react';
 import { Box, Card, CardContent, CardActionArea } from '@mui/material';
-import { styled } from '@mui/system';
+import React, { type ReactNode } from 'react';
+
+import getColorModeValue from '../../utils/useColorModeValue';
 import Loading from '../Loading';
-import useColorModeValue from '../../utils/useColorModeValue';
-
-const StyledCard = styled(
-  ({ selected, disabled, ...rest }) => <Card {...rest} />,
-  {
-    shouldForwardProp: (prop) => !['selected'].includes(prop.toString()),
-  }
-)(
-  ({ theme, selected, disabled }) => `
-  width: 100%;
-  border-radius: ${theme.spacing(1)};
-  border: 1px solid ${
-    selected ? theme.palette.highlight.main : theme.palette.divider
-  };
-  background-color: ${
-    selected
-      ? useColorModeValue(theme, 'sidebarBackground')
-      : theme.palette.background.paper
-  };
-  position: relative;
-
-  &:hover {
-    border-color: ${
-      disabled
-        ? theme.palette.divider
-        : selected
-        ? theme.palette.highlight.main
-        : theme.palette.divider
-    };
-  }
-`
-);
-
-const StyledCardContent = styled(CardContent)(
-  ({ theme }) => `
-  padding-bottom: ${theme.spacing(2)} !important;
-`
-);
 
 export type CardListItemProps = {
   children: ReactNode;
@@ -47,25 +10,38 @@ export type CardListItemProps = {
   onSelect?: () => void;
   disabled?: boolean;
   loading?: boolean;
+  noPadding: boolean;
 };
 
 export default function CardListItem(props: CardListItemProps) {
-  const { children, selected, onSelect, loading, disabled, ...rest } = props;
+  const { children, selected, onSelect, loading, disabled, noPadding = false, ...rest } = props;
 
-  const content = <StyledCardContent>{children}</StyledCardContent>;
+  const content = (
+    <CardContent sx={{ padding: (theme) => (noPadding ? `0px !important` : `${theme.spacing(2)}`) }}>
+      {children}
+    </CardContent>
+  );
 
   return (
-    <StyledCard
+    <Card
       variant="outlined"
-      selected={selected}
-      disabled={disabled}
       {...rest}
+      sx={{
+        width: '100%',
+        borderRadius: (theme) => `${theme.spacing(1)}`,
+        border: (theme) => `1px solid ${selected ? theme.palette.highlight.main : theme.palette.divider}`,
+        backgroundColor: (theme) =>
+          `${selected ? getColorModeValue(theme, 'sidebarBackground') : theme.palette.background.paper}`,
+        position: 'relative',
+        overflow: 'visible',
+
+        '&:hover': {
+          borderColor: (theme) =>
+            `${disabled ? theme.palette.divider : selected ? theme.palette.highlight.main : theme.palette.divider}`,
+        },
+      }}
     >
-      {onSelect ? (
-        <CardActionArea onClick={onSelect}>{content}</CardActionArea>
-      ) : (
-        content
-      )}
+      {onSelect ? <CardActionArea onClick={onSelect}>{content}</CardActionArea> : content}
       {(loading || disabled) && (
         <Box
           position="absolute"
@@ -82,6 +58,6 @@ export default function CardListItem(props: CardListItemProps) {
           {loading && <Loading center />}
         </Box>
       )}
-    </StyledCard>
+    </Card>
   );
 }

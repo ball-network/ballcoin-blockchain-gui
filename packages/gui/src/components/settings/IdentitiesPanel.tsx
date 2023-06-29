@@ -1,19 +1,22 @@
+import { WalletType } from '@ball-network/api';
+import { useGetDIDQuery, useGetWalletsQuery } from '@ball-network/api-react';
+import { CardListItem, Flex, Truncate } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Add } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { orderBy } from 'lodash';
 import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { CardListItem, Flex, Truncate } from '@ball-network/core';
-import { Box, Card, CardContent, Typography } from '@mui/material';
 import styled from 'styled-components';
-import { orderBy } from 'lodash';
 
-import { useGetDIDQuery, useGetWalletsQuery } from '@ball-network/api-react';
-import { WalletType } from '@ball-network/api';
 import { didToDIDId } from '../../util/dids';
 
 const StyledRoot = styled(Box)`
-  min-width: 390px;
+  min-width: 280px;
   height: 100%;
   display: flex;
-  padding-top: ${({ theme }) => `${theme.spacing(3)}`};
+  padding-top: ${({ theme }) => `${theme.spacing(1)}`};
 `;
 
 const StyledBody = styled(Box)`
@@ -37,24 +40,8 @@ const StyledContent = styled(Box)`
   min-height: ${({ theme }) => theme.spacing(5)};
 `;
 
-const StyledCard = styled(Card)(
-  ({ theme }) => `
-  width: 100%;
-  border-radius: ${theme.spacing(1)};
-  border: 1px dashed ${theme.palette.divider};
-  background-color: ${theme.palette.background.paper};
-  margin-bottom: ${theme.spacing(1)};
-`,
-);
-
-const StyledCardContent = styled(CardContent)(
-  ({ theme }) => `
-  padding-bottom: ${theme.spacing(2)} !important;
-`,
-);
-
 function DisplayDid(wallet) {
-  const id = wallet.wallet.id;
+  const { id } = wallet.wallet;
   const { data: did } = useGetDIDQuery({ walletId: id });
 
   if (did) {
@@ -62,24 +49,20 @@ function DisplayDid(wallet) {
 
     return (
       <div>
-        <Truncate tooltip copyToClipboard>
+        <Truncate ValueProps={{ variant: 'body2' }} tooltip copyToClipboard>
           {myDidText}
         </Truncate>
       </div>
     );
-  } else {
-    return null;
   }
+  return null;
 }
 
 export default function IdentitiesPanel() {
   const navigate = useNavigate();
   const { walletId } = useParams();
   const { data: wallets, isLoading } = useGetWalletsQuery();
-
-  function handleSelectWallet(walletId: number) {
-    navigate(`/dashboard/settings/profiles/${walletId}`);
-  }
+  const theme = useTheme();
 
   const dids = [];
   if (wallets) {
@@ -94,52 +77,61 @@ export default function IdentitiesPanel() {
     if (isLoading) {
       return [];
     }
-
-    const didLength = dids.length;
-
-    if (didLength == 0) {
-      return (
-        <StyledCard variant="outlined">
-          <StyledCardContent>
-            <Flex flexDirection="column" height="100%" width="100%">
-              <Typography>No Profiles</Typography>
-            </Flex>
-          </StyledCardContent>
-        </StyledCard>
-      );
-    } else {
-      const orderedProfiles = orderBy(wallets, ['id'], ['asc']);
-
-      return orderedProfiles
-        .filter((wallet) => [WalletType.DECENTRALIZED_ID].includes(wallet.type))
-        .map((wallet) => {
-          const primaryTitle = wallet.name;
-
-          function handleSelect() {
-            handleSelectWallet(wallet.id);
-          }
-
-          return (
-            <CardListItem
-              onSelect={handleSelect}
-              key={wallet.id}
-              selected={wallet.id === Number(walletId)}
-            >
-              <Flex gap={0.5} flexDirection="column" height="100%" width="100%">
-                <Flex>
-                  <Typography>
-                    <strong>{primaryTitle}</strong>
-                  </Typography>
-                </Flex>
-                <Flex>
-                  <DisplayDid wallet={wallet} />
-                </Flex>
-              </Flex>
-            </CardListItem>
-          );
-        });
+    function handleSelectWallet(id: number) {
+      navigate(`/dashboard/settings/profiles/${id}`);
     }
-  }, [wallets, walletId, isLoading]);
+
+    function handleCreateProfile() {
+      navigate(`/dashboard/settings/profiles/add`);
+    }
+
+    const createProfileItem = (
+      <CardListItem
+        variant="outlined"
+        onSelect={handleCreateProfile}
+        key="create-profile"
+        sx={{ border: `1px dashed ${(theme.palette as any).border.main}` }}
+      >
+        <Flex flexDirection="column" height="100%" width="100%" onClick={handleCreateProfile}>
+          <Flex flexDirection="row" justifyContent="space-between">
+            <Typography>
+              <Trans>Create Profile</Trans>
+            </Typography>
+            <Add />
+          </Flex>
+        </Flex>
+      </CardListItem>
+    );
+
+    const orderedProfiles = orderBy(wallets, ['id'], ['asc']);
+
+    const profileItems = orderedProfiles
+      .filter((wallet) => [WalletType.DECENTRALIZED_ID].includes(wallet.type))
+      .map((wallet) => {
+        const primaryTitle = wallet.name;
+
+        function handleSelect() {
+          handleSelectWallet(wallet.id);
+        }
+
+        return (
+          <CardListItem onSelect={handleSelect} key={wallet.id} selected={wallet.id === Number(walletId)}>
+            <Flex gap={0.5} flexDirection="column" height="100%" width="100%">
+              <Flex>
+                <Typography variant="body1" sx={{ fontWeight: 500, textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                  {primaryTitle}
+                </Typography>
+              </Flex>
+              <Flex>
+                <DisplayDid wallet={wallet} />
+              </Flex>
+            </Flex>
+          </CardListItem>
+        );
+      });
+
+    return [createProfileItem, ...profileItems];
+  }, [isLoading, wallets, navigate, walletId, theme]);
 
   return (
     <StyledRoot>

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
 import type { PlotNFT } from '@ball-network/api';
 import { useGetPlotNFTsQuery } from '@ball-network/api-react';
-import useUnconfirmedPlotNFTs from './useUnconfirmedPlotNFTs';
 import PlotNFTExternal from 'types/PlotNFTExternal';
+
+import useUnconfirmedPlotNFTs from './useUnconfirmedPlotNFTs';
 
 export default function usePlotNFTs(): {
   loading: boolean;
@@ -10,11 +10,15 @@ export default function usePlotNFTs(): {
   external?: PlotNFTExternal[];
   error?: Error;
 } {
-  const { data, isLoading: isLoadingGetPlotNFTs, error } = useGetPlotNFTsQuery(undefined, {
-    pollingInterval: 10000,
+  const {
+    data,
+    isLoading: isLoadingGetPlotNFTs,
+    error,
+  } = useGetPlotNFTsQuery(undefined, {
+    pollingInterval: 10_000,
   });
 
-  const { unconfirmed, isLoading: isLoadingUnconfirmedPlotNFTs } = useUnconfirmedPlotNFTs();
+  const { isLoading: isLoadingUnconfirmedPlotNFTs } = useUnconfirmedPlotNFTs();
   const isLoading = isLoadingGetPlotNFTs || isLoadingUnconfirmedPlotNFTs;
 
   /*
@@ -22,11 +26,7 @@ export default function usePlotNFTs(): {
     if (isLoading) {
       return;
     }
-
-
   }
-
-  console.log('nfts', data?.nfts);
 
   useEffect(() => {
     removeConfirmed();

@@ -1,23 +1,14 @@
-import React, { useState } from 'react';
-import { Trans } from '@lingui/macro';
-import {
-  Address,
-  TableControlled,
-  Flex,
-  FormatBytes,
-  Tooltip,
-  StateColor,
-} from '@ball-network/core';
-import { Warning as WarningIcon } from '@mui/icons-material';
 import { type Plot } from '@ball-network/api';
-import {
-  useGetHarvesterPlotsValidQuery,
-  useGetHarvesterQuery,
-} from '@ball-network/api-react';
-import styled from 'styled-components';
+import { useGetHarvesterPlotsValidQuery, useGetHarvesterQuery } from '@ball-network/api-react';
+import { Address, TableControlled, Flex, FormatBytes, Tooltip, StateColor } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Warning as WarningIcon } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
-import PlotStatus from './PlotStatus';
+import React, { useState } from 'react';
+import styled from 'styled-components';
+
 import PlotAction from './PlotAction';
+import PlotStatus from './PlotStatus';
 
 const StyledWarningIcon = styled(WarningIcon)`
   color: ${StateColor.WARNING};
@@ -29,9 +20,7 @@ const cols = [
       const hasDuplicates = false;
       const [firstDuplicate] = duplicates || [];
 
-      const duplicateTitle = hasDuplicates ? (
-        <Trans>Plot is duplicate of {firstDuplicate.filename}</Trans>
-      ) : null;
+      const duplicateTitle = hasDuplicates ? <Trans>Plot is duplicate of {firstDuplicate.filename}</Trans> : null;
 
       return (
         <Flex alignItems="center" gap={1}>
@@ -105,19 +94,18 @@ export default function PlotHarvesterPlots(props: PlotHarvesterPlotsProps) {
   } = useGetHarvesterQuery({
     nodeId,
   });
-  const { isLoading: isLoadingHarvesterPlots, data = [] } =
-    useGetHarvesterPlotsValidQuery({
-      nodeId,
-      page,
-      pageSize,
-    });
+  const { isLoading: isLoadingHarvesterPlots, data = [] } = useGetHarvesterPlotsValidQuery({
+    nodeId,
+    page,
+    pageSize,
+  });
 
   const isLoading = isLoadingHarvester || isLoadingHarvesterPlots;
   const count = plots ?? 0;
 
-  function handlePageChange(rowsPerPage: number, page: number) {
+  function handlePageChange(rowsPerPage: number, pageLocal: number) {
     setPageSize(rowsPerPage);
-    setPage(page);
+    setPage(pageLocal);
   }
 
   return (
@@ -135,11 +123,7 @@ export default function PlotHarvesterPlots(props: PlotHarvesterPlotsProps) {
       caption={
         !plots && (
           <Typography variant="body2" align="center">
-            {initialized ? (
-              <Trans>No plots yet</Trans>
-            ) : (
-              <Trans>Initializing...</Trans>
-            )}
+            {initialized ? <Trans>No plots yet</Trans> : <Trans>Initializing...</Trans>}
           </Typography>
         )
       }

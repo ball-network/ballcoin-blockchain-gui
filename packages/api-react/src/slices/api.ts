@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign -- This file use Immer */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 type Config = {
@@ -7,7 +8,7 @@ type Config = {
   webSocket: any;
 };
 
-const initialState = {} as { 
+const initialState = {} as {
   config?: Config;
 };
 

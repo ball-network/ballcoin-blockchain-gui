@@ -1,7 +1,8 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import ballLazyBaseQuery from './ballLazyBaseQuery';
 
-export const baseQuery = ballLazyBaseQuery({});
+import baseQuery from './ballLazyBaseQuery';
+
+export { baseQuery };
 
 export default createApi({
   reducerPath: 'ballApi',

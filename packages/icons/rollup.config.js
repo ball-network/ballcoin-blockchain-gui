@@ -1,5 +1,6 @@
 import externals from 'rollup-plugin-node-externals';
 import babel from '@rollup/plugin-babel';
+import alias from '@rollup/plugin-alias';
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import svgr from '@svgr/rollup';
@@ -10,11 +11,19 @@ const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 export default {
   input: './src/index.ts',
   plugins: [
+    alias({
+      entries: [
+        {
+          find: '@mui/styled-engine',
+          replacement: '@mui/styled-engine-sc',
+        },
+      ],
+    }),
     externals({
       deps: true,
     }),
 
-    svgr(),
+    svgr({ typescript: true }),
 
     // Allows node_modules resolution
     nodeResolve({ extensions }),
@@ -29,13 +38,16 @@ export default {
       include: ['src/**/*'],
     }),
   ],
-  output: [{
-    file: pkg.module,
-    format: 'es',
-    sourcemap: true,
-  }, {
-    file: pkg.main,
-    format: 'cjs',
-    sourcemap: true,
-  }],
+  output: [
+    {
+      file: pkg.module,
+      format: 'es',
+      sourcemap: true,
+    },
+    {
+      file: pkg.main,
+      format: 'cjs',
+      sourcemap: true,
+    },
+  ],
 };

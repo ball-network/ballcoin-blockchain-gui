@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { Trans } from '@lingui/macro';
 import { WalletType } from '@ball-network/api';
 import type { CATToken, Wallet } from '@ball-network/api';
 import { useGetCatListQuery, useGetWalletsQuery } from '@ball-network/api-react';
 import { useCurrencyCode } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import React, { useMemo } from 'react';
 
 type TokenSelectOption = {
   walletId: number;
@@ -44,12 +44,8 @@ export default function NFTOfferTokenSelector(props: Props) {
       return [];
     }
 
-    const ballWalletSelection = [
-      wallets.find(
-        (wallet: Wallet) => wallet.type === WalletType.STANDARD_WALLET,
-      ),
-    ].map((wallet: WalletType) => {
-      return {
+    const ballWalletSelection = [wallets.find((wallet: Wallet) => wallet.type === WalletType.STANDARD_WALLET)].map(
+      (wallet: WalletType) => ({
         walletId: wallet.id,
         walletType: wallet.type,
         name: 'Ball',
@@ -57,14 +53,13 @@ export default function NFTOfferTokenSelector(props: Props) {
         displayName: `Ball (${currencyCode})`,
         disabled: false,
         tail: '',
-      };
-    });
+      })
+    );
     const catOptions = wallets
       .filter((wallet: Wallet) => wallet.type === WalletType.CAT)
       .map((wallet: Wallet) => {
         const cat: CATToken | undefined = catList.find(
-          (cat: CATToken) =>
-            cat.assetId.toLowerCase() === wallet.tail?.toLowerCase(),
+          (catItem: CATToken) => catItem.assetId.toLowerCase() === wallet.tail?.toLowerCase()
         );
         return {
           walletId: wallet.id,
@@ -77,12 +72,10 @@ export default function NFTOfferTokenSelector(props: Props) {
         };
       });
     const allOptions = [...ballWalletSelection, ...catOptions];
-    const selected = allOptions.find(
-      (option: TokenSelectOption) => option.walletId === selectedWalletId,
-    );
+    const selected = allOptions.find((option: TokenSelectOption) => option.walletId === selectedWalletId);
 
     return [selected, allOptions];
-  }, [catList, currencyCode, selectedWalletId]);
+  }, [catList, currencyCode, isLoading, selectedWalletId, wallets]);
 
   function handleSelection(selection: TokenSelectOption) {
     onChange({
@@ -105,11 +98,7 @@ export default function NFTOfferTokenSelector(props: Props) {
           </MenuItem>
         ) : (
           options.map((option: TokenSelectOption) => (
-            <MenuItem
-              value={option.walletId}
-              key={option.walletId}
-              onClick={() => handleSelection(option)}
-            >
+            <MenuItem value={option.walletId} key={option.walletId} onClick={() => handleSelection(option)}>
               {option.displayName}
             </MenuItem>
           ))

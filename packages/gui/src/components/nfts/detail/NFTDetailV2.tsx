@@ -1,155 +1,144 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Trans } from '@lingui/macro';
-import styled from 'styled-components';
-import {
-  Back,
-  Flex,
-  LayoutDashboardSub,
-  Loading,
-  useOpenDialog,
-} from '@ball-network/core';
 import type { NFTInfo } from '@ball-network/api';
-import { useGetNFTInfoQuery, useGetNFTWallets } from '@ball-network/api-react';
-import { Box, Grid, Typography, IconButton, Button } from '@mui/material';
-import { MoreVert } from '@mui/icons-material';
-import { useParams } from 'react-router-dom';
+import { Flex, LayoutDashboardSub, useOpenDialog, Tooltip } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import {
+  MoreVert,
+  ArrowBackIosNew,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+} from '@mui/icons-material';
+import { IconButton, Box, Grid, Typography } from '@mui/material';
+import React, { useEffect, useMemo, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+
+import useFilteredNFTs from '../../../hooks/useFilteredNFTs';
+import useNFT from '../../../hooks/useNFT';
+import useNFTMetadata from '../../../hooks/useNFTMetadata';
+import getNFTId from '../../../util/getNFTId';
+import { isImage } from '../../../util/utils';
+import OfferIncomingTable from '../../offers2/OfferIncomingTable';
+import NFTContextualActions, { NFTContextualActionTypes } from '../NFTContextualActions';
+import NFTDetails from '../NFTDetails';
+import NFTHashStatus from '../NFTHashStatus';
+import NFTMetadata from '../NFTMetadata';
 import NFTPreview from '../NFTPreview';
+import NFTPreviewDialog from '../NFTPreviewDialog';
+// import NFTProgressBar from '../NFTProgressBar';
 import NFTProperties from '../NFTProperties';
 import NFTRankings from '../NFTRankings';
-import NFTDetails from '../NFTDetails';
-import useFetchNFTs from '../../../hooks/useFetchNFTs';
-import useNFTMetadata from '../../../hooks/useNFTMetadata';
-import NFTContextualActions, {
-  NFTContextualActionTypes,
-} from '../NFTContextualActions';
-import NFTPreviewDialog from '../NFTPreviewDialog';
-import NFTProgressBar from '../NFTProgressBar';
-import { useLocalStorage } from '@ball-network/api-react';
-import { isImage } from '../../../util/utils.js';
-import { launcherIdFromNFTId } from '../../../util/nfts';
-import isURL from 'validator/lib/isURL';
-import { IpcRenderer } from 'electron';
+import NFTTitle from '../NFTTitle';
 
 export default function NFTDetail() {
   const { nftId } = useParams();
-  const { data: nft, isLoading: isLoadingNFT } = useGetNFTInfoQuery({
-    coinId: launcherIdFromNFTId(nftId ?? ''),
-  });
-  const { wallets: nftWallets, isLoading: isLoadingWallets } =
-    useGetNFTWallets();
-  const { nfts, isLoading: isLoadingNFTs } = useFetchNFTs(
-    nftWallets.map((wallet) => wallet.id),
-    { skip: !!isLoadingWallets },
-  );
+  if (!nftId) {
+    return null;
+  }
 
-  const localNFT = useMemo(() => {
-    if (!nfts || isLoadingNFTs) {
-      return undefined;
-    }
-    return nfts.find((nft: NFTInfo) => nft.$nftId === nftId);
-  }, [nfts, nftId, isLoadingNFTs]);
-
-  const isLoading = isLoadingNFT;
-
-  return isLoading ? (
-    <Loading center />
-  ) : (
-    <NFTDetailLoaded nft={localNFT ?? nft} />
-  );
+  return <NFTDetailLoaded nftId={nftId} />;
 }
 
 type NFTDetailLoadedProps = {
-  nft: NFTInfo;
+  nftId: string;
 };
 
 function NFTDetailLoaded(props: NFTDetailLoadedProps) {
-  const { nft } = props;
-  const nftId = nft.$nftId;
+  const { nftId } = props;
   const openDialog = useOpenDialog();
-  const [validationProcessed, setValidationProcessed] = useState(false);
-  const nftRef = React.useRef(null);
-  const [, setIsValid] = useState(false);
+  const { nft } = useNFT(nftId);
+  const { metadata } = useNFTMetadata(nftId);
 
-  const uri = nft?.dataUris?.[0];
-  const [contentCache] = useLocalStorage(`content-cache-${nftId}`, {});
-  const [validateNFT, setValidateNFT] = useState(false);
+  const { nfts } = useFilteredNFTs();
+  const navigate = useNavigate();
 
-  nftRef.current = nft;
+  const position = useMemo(() => nfts.findIndex((item: NFTInfo) => getNFTId(item.launcherId) === nftId), [nftId, nfts]);
+  const isLastPosition = nfts.length === position + 1;
 
-  const { metadata, error } = useNFTMetadata([nft]);
+  const navigateToDetail = useCallback(
+    (offset: number) => {
+      const nextPosition = position + offset;
+      if (nextPosition >= 0 && nextPosition < nfts.length) {
+        const nextNFTId = getNFTId(nfts[nextPosition].launcherId);
+        navigate(`/dashboard/nfts/${nextNFTId}`);
+      }
+    },
+    [nfts, navigate, position]
+  );
 
   useEffect(() => {
+    function detailKeyPress(e: any) {
+      if (e.code === 'ArrowLeft') {
+        navigateToDetail(-1);
+      }
+      if (e.code === 'ArrowRight') {
+        navigateToDetail(1);
+      }
+    }
+    document.addEventListener('keyup', detailKeyPress);
     return () => {
-      const ipcRenderer: IpcRenderer = (window as any).ipcRenderer;
-      ipcRenderer.invoke('abortFetchingBinary', uri);
+      document.removeEventListener('keyup', detailKeyPress);
     };
-  }, []);
-
-  // useEffect(() => {
-  //   if (metadata) {
-  //     console.log(JSON.stringify(metadata, null, 2));
-  //   }
-  // }, [metadata]);
-
-  const ValidateContainer = styled.div`
-    padding-top: 25px;
-    text-align: center;
-  `;
-
-  const ErrorMessage = styled.div`
-    color: red;
-  `;
+  }, [navigateToDetail]);
 
   function handleShowFullScreen() {
+    const uri = nft?.dataUris?.[0];
     if (isImage(uri)) {
-      openDialog(<NFTPreviewDialog nft={nft} />);
+      openDialog(<NFTPreviewDialog id={nftId} />);
     }
   }
 
-  function renderValidationState() {
-    if (!isURL(uri)) return null;
-    if (validateNFT && !validationProcessed) {
-      return <Trans>Validating hash...</Trans>;
-    } else if (contentCache.valid) {
-      return <Trans>Hash is validated.</Trans>;
-    } else if (contentCache.valid === false) {
-      return (
-        <ErrorMessage>
-          <Trans>Hash mismatch.</Trans>
-        </ErrorMessage>
-      );
-    } else {
-      return (
-        <Button
-          onClick={() => setValidateNFT(true)}
-          variant="outlined"
-          size="large"
-        >
-          <Trans>Validate SHA256 SUM</Trans>
-        </Button>
-      );
-    }
-  }
-
+  /*
   function fetchBinaryContentDone(valid: boolean) {
     setValidationProcessed(true);
     setIsValid(valid);
   }
+  */
+
+  function handleGoBack() {
+    navigate('/dashboard/nfts');
+  }
 
   return (
     <Flex flexDirection="column" gap={2}>
-      <Flex
-        sx={{ bgcolor: 'background.paper' }}
-        justifyContent="center"
-        py={{ xs: 2, sm: 3, md: 7 }}
-        px={3}
-      >
-        <Flex
-          position="relative"
-          maxWidth="1200px"
-          width="100%"
-          justifyContent="center"
-        >
+      <Flex sx={{ bgcolor: 'background.paper' }} justifyContent="center" py={{ xs: 2, sm: 3, md: 5 }} px={3}>
+        <Flex flexDirection="column" gap={3} position="relative" maxWidth="1200px" width="100%" justifyContent="center">
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <Box>
+              <IconButton onClick={handleGoBack} sx={{ backgroundColor: 'action.hover' }}>
+                <ArrowBackIosNew />
+              </IconButton>
+            </Box>
+            <Box>
+              {nfts.length > 1 && (
+                <Flex gap={2} alignItems="center">
+                  <Tooltip title={<Trans>Previous</Trans>}>
+                    <IconButton onClick={() => navigateToDetail(-1)} disabled={position === 0}>
+                      <ArrowBackIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={<Trans>Use left and right arrow keys to navigate</Trans>}>
+                    <Typography variant="body2">
+                      {nfts.length > 1 ? `${position + 1} / ${nfts.length}` : null}
+                    </Typography>
+                  </Tooltip>
+                  <Tooltip title={<Trans>Next</Trans>}>
+                    <IconButton onClick={() => navigateToDetail(1)} disabled={isLastPosition}>
+                      <ArrowForwardIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Flex>
+              )}
+            </Box>
+            <Box display="flex" justifyContent="flex-end">
+              <NFTHashStatus nftId={nftId} />
+            </Box>
+          </Box>
           <Box
             overflow="hidden"
             alignItems="center"
@@ -162,51 +151,37 @@ function NFTDetailLoaded(props: NFTDetailLoadedProps) {
             {nft && (
               <Flex flexDirection="column">
                 <Box onClick={handleShowFullScreen} sx={{ cursor: 'pointer' }}>
-                  <NFTPreview
-                    nft={nft}
-                    width="100%"
-                    height="412px"
-                    fit="contain"
-                    validateNFT={validateNFT}
-                    metadataError={error}
-                  />
+                  <NFTPreview id={nftId} width="100%" height="412px" fit="contain" hideStatus />
                 </Box>
-                <ValidateContainer>{renderValidationState()}</ValidateContainer>
+                {/*
                 <NFTProgressBar
                   nftIdUrl={`${nft.$nftId}_${uri}`}
                   setValidateNFT={setValidateNFT}
                   fetchBinaryContentDone={fetchBinaryContentDone}
                 />
+                */}
               </Flex>
             )}
-          </Box>
-          <Box position="absolute" left={1} top={1}>
-            <Back iconStyle={{ backgroundColor: 'action.hover' }} />
           </Box>
         </Flex>
       </Flex>
       <LayoutDashboardSub>
-        <Flex
-          flexDirection="column"
-          gap={2}
-          maxWidth="1200px"
-          width="100%"
-          alignSelf="center"
-          mb={3}
-        >
+        <Flex flexDirection="column" gap={2} maxWidth="1200px" width="100%" alignSelf="center" mb={3}>
           <Flex alignItems="center" justifyContent="space-between">
             <Typography variant="h4" overflow="hidden">
-              {metadata?.name ?? <Trans>Title Not Available</Trans>}
+              <NFTTitle nftId={nftId} />
             </Typography>
-            <NFTContextualActions
-              selection={{ items: [nft] }}
-              availableActions={NFTContextualActionTypes.All}
-              toggle={
-                <IconButton>
-                  <MoreVert />
-                </IconButton>
-              }
-            />
+            {nft && (
+              <NFTContextualActions
+                selection={{ items: [nft] }}
+                availableActions={NFTContextualActionTypes.All}
+                toggle={
+                  <IconButton>
+                    <MoreVert />
+                  </IconButton>
+                }
+              />
+            )}
           </Flex>
 
           <Grid spacing={{ xs: 6, lg: 8 }} container>
@@ -218,7 +193,7 @@ function NFTDetailLoaded(props: NFTDetailLoadedProps) {
                   </Typography>
 
                   <Typography sx={{ whiteSpace: 'pre-line' }} overflow="hidden">
-                    {metadata?.description ?? <Trans>Not Available</Trans>}
+                    <NFTMetadata path="description" nftId={nftId} />
                   </Typography>
                 </Flex>
                 {metadata?.collection?.name && (
@@ -228,9 +203,7 @@ function NFTDetailLoaded(props: NFTDetailLoadedProps) {
                     </Typography>
 
                     <Typography overflow="hidden">
-                      {metadata?.collection?.name ?? (
-                        <Trans>Not Available</Trans>
-                      )}
+                      <NFTMetadata path="collection.name" nftId={nftId} />
                     </Typography>
                   </Flex>
                 )}
@@ -242,7 +215,7 @@ function NFTDetailLoaded(props: NFTDetailLoadedProps) {
 
                     <Typography>
                       <Trans>
-                        {nft.editionNumber} of {nft.editionTotal}
+                        {nft?.editionNumber} of {nft?.editionTotal}
                       </Trans>
                     </Typography>
                   </Flex>
@@ -252,18 +225,11 @@ function NFTDetailLoaded(props: NFTDetailLoadedProps) {
               </Flex>
             </Grid>
             <Grid item xs={12} md={6}>
-              <NFTDetails nft={nft} metadata={metadata} />
+              {nft && <NFTDetails nft={nft} metadata={metadata} />}
             </Grid>
           </Grid>
 
-          {/**
-          <Flex flexDirection="column" gap={1}>
-            <Typography variant="h6">
-              <Trans>Item Activity</Trans>
-            </Typography>
-            <Table cols={cols} rows={metadata.activity} />
-          </Flex>
-          */}
+          <OfferIncomingTable nftId={nftId} title={<Trans>Offers</Trans>} />
         </Flex>
       </LayoutDashboardSub>
     </Flex>

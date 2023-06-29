@@ -1,18 +1,25 @@
+import { OfferSummaryRecord } from '@ball-network/api';
 import { mojoToCAT, mojoToBall } from '@ball-network/core';
 import BigNumber from 'bignumber.js';
+
 import type OfferBuilderData from '../@types/OfferBuilderData';
 import type OfferSummary from '../@types/OfferSummary';
-import { launcherIdToNFTId } from '../util/nfts';
+import { launcherIdToNFTId } from './nfts';
 
 export default function offerToOfferBuilderData(
-  offerSummary: OfferSummary,
+  offerSummary: OfferSummary | OfferSummaryRecord,
+  setDefaultOfferedFee: boolean,
+  defaultFee?: string // in mojos
 ): OfferBuilderData {
   const { fees, offered, requested, infos } = offerSummary;
 
-  const offeredXch: OfferBuilderData['offered']['ball'] = [];
+  const defaultFeeBALL = defaultFee ? mojoToBall(defaultFee).toFixed() : '';
+
+  const offeredBall: OfferBuilderData['offered']['ball'] = [];
   const offeredTokens: OfferBuilderData['offered']['tokens'] = [];
   const offeredNfts: OfferBuilderData['offered']['nfts'] = [];
-  const requestedXch: OfferBuilderData['requested']['ball'] = [];
+  const offeredFee: OfferBuilderData['offered']['fee'] = setDefaultOfferedFee ? [{ amount: defaultFeeBALL }] : [];
+  const requestedBall: OfferBuilderData['requested']['ball'] = [];
   const requestedTokens: OfferBuilderData['requested']['tokens'] = [];
   const requestedNfts: OfferBuilderData['requested']['nfts'] = [];
 
@@ -32,7 +39,7 @@ export default function offerToOfferBuilderData(
         nftId: launcherIdToNFTId(info.launcherId),
       });
     } else if (id === 'ball') {
-      offeredXch.push({
+      offeredBall.push({
         amount: mojoToBall(amount).toFixed(),
       });
     }
@@ -52,7 +59,7 @@ export default function offerToOfferBuilderData(
         nftId: launcherIdToNFTId(info.launcherId),
       });
     } else if (id === 'ball') {
-      requestedXch.push({
+      requestedBall.push({
         amount: mojoToBall(amount).toFixed(),
       });
     }
@@ -60,13 +67,13 @@ export default function offerToOfferBuilderData(
 
   return {
     offered: {
-      ball: offeredXch,
+      ball: offeredBall,
       tokens: offeredTokens,
       nfts: offeredNfts,
-      fee: [],
+      fee: offeredFee,
     },
     requested: {
-      ball: requestedXch,
+      ball: requestedBall,
       tokens: requestedTokens,
       nfts: requestedNfts,
       fee: [

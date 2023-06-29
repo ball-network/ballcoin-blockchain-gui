@@ -1,5 +1,5 @@
+import { usePrefs } from '@ball-network/api-react';
 import { useCallback, useMemo } from 'react';
-import { useLocalStorage } from '@ball-network/api-react';
 
 type List<Type> = {
   [key: string]: Type[];
@@ -9,28 +9,19 @@ export default function useHiddenList<Type>(
   listName: string
 ): [
   isHidden: (key: Type) => boolean,
-  setIsHidden: (
-    key: Type,
-    newValue: (isHidden: boolean) => boolean | boolean
-  ) => void,
-  hidden: Type[]
+  setIsHidden: (key: Type, newValue: (isHidden: boolean) => boolean | boolean) => void,
+  hidden: Type[],
+  setIsNFTMultipleHide: (nftIds: string[], hide: boolean) => void
 ] {
-  const [hiddenLists, setHiddenLists] = useLocalStorage<List<Type>>(
-    'isHidden',
-    {}
-  );
+  const [hiddenLists, setHiddenLists] = usePrefs<List<Type>>('isHidden', {});
 
-  const list = useMemo(
-    () => (hiddenLists[listName] ? [...hiddenLists[listName]] : []),
-    [hiddenLists, listName]
-  );
+  const list = useMemo(() => (hiddenLists[listName] ? [...hiddenLists[listName]] : []), [hiddenLists, listName]);
 
   const handleSetIsHidden = useCallback(
     (key: Type, newValue: (isHidden: boolean) => boolean | boolean) => {
       const isHidden = list.includes(key);
 
-      const newValueToStore =
-        typeof newValue === 'function' ? newValue(isHidden) : newValue;
+      const newValueToStore = typeof newValue === 'function' ? newValue(isHidden) : newValue;
 
       if (newValueToStore && !list.includes(key)) {
         setHiddenLists({
@@ -47,12 +38,15 @@ export default function useHiddenList<Type>(
     [list, hiddenLists, setHiddenLists, listName]
   );
 
-  const isHidden = useCallback(
-    (key: Type) => {
-      return list.includes(key);
-    },
-    [list]
-  );
+  const setIsNFTMultipleHide = (nftIds: string[], hide: boolean) => {
+    const hiddenArray = hide ? list.concat(nftIds) : list.filter((nftId) => nftIds.indexOf(nftId) === -1);
+    setHiddenLists({
+      ...hiddenLists,
+      [listName]: hiddenArray,
+    });
+  };
 
-  return [isHidden, handleSetIsHidden, list];
+  const isHidden = useCallback((key: Type) => list.includes(key), [list]);
+
+  return [isHidden, handleSetIsHidden, list, setIsNFTMultipleHide];
 }

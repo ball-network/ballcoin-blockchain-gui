@@ -1,17 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { t, Trans } from '@lingui/macro';
-import styled from 'styled-components';
-import { Button, CopyToClipboard, Flex, Link, Loading } from '@ball-network/core';
-import {
-  Alert,
-  Dialog,
-  DialogActions,
-  DialogTitle,
-  DialogContent,
-  Typography,
-} from '@mui/material';
-import { useGetPoolLoginLinkQuery } from '@ball-network/api-react';
 import type { PlotNFT, PlotNFTExternal } from '@ball-network/api';
+import { useGetPoolLoginLinkQuery } from '@ball-network/api-react';
+import { Button, CopyToClipboard, Flex, Link, Loading } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Alert, Dialog, DialogActions, DialogTitle, DialogContent, Typography } from '@mui/material';
+import React from 'react';
+import styled from 'styled-components';
 
 const StyledLoginLink = styled(Typography)`
   word-break: break-all;
@@ -31,11 +24,18 @@ export default function PlotNFTGetPoolLoginLinkDialog(props: Props) {
     },
   } = nft;
 
-  const { data: loginLink, isLoading, error } = useGetPoolLoginLinkQuery({
-    launcherId,
-  }, {
-    skip: !poolUrl,
-  });
+  const {
+    data: loginLink,
+    isLoading,
+    error,
+  } = useGetPoolLoginLinkQuery(
+    {
+      launcherId,
+    },
+    {
+      skip: !poolUrl,
+    }
+  );
 
   function handleClose() {
     onClose();
@@ -64,9 +64,8 @@ export default function PlotNFTGetPoolLoginLinkDialog(props: Props) {
 
               <Typography variant="body2" color="textSecondary">
                 <Trans>
-                  It is a one-time login link that can be used to log in to a
-                  pool's website. It contains a signature using the farmer's key
-                  from the plot NFT. Not all pools support this feature.
+                  It is a one-time login link that can be used to log in to a pool's website. It contains a signature
+                  using the farmer's key from the plot NFT. Not all pools support this feature.
                 </Trans>{' '}
                 <Link
                   target="_blank"
@@ -90,8 +89,3 @@ export default function PlotNFTGetPoolLoginLinkDialog(props: Props) {
     </Dialog>
   );
 }
-
-PlotNFTGetPoolLoginLinkDialog.defaultProps = {
-  open: false,
-  onClose: () => {},
-};

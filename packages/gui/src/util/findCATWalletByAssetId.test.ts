@@ -1,4 +1,5 @@
 import { WalletType } from '@ball-network/api';
+
 import findCATWalletByAssetId from './findCATWalletByAssetId';
 
 describe('findCATWalletByAssetId', () => {

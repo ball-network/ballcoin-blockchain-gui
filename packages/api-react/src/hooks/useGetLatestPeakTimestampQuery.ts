@@ -1,17 +1,16 @@
+import { type BlockRecord } from '@ball-network/api';
 import { useRef, useMemo } from 'react';
+
 import useGetLatestBlocksQuery from './useGetLatestBlocksQuery';
 
-function getLatestTimestamp(
-  blocks?: Object[],
-  lastPeekTimestamp?: number,
-): number | undefined {
+function getLatestTimestamp(blocks?: BlockRecord[], lastPeekTimestamp?: number): number | undefined {
   const timestamps = [];
   if (lastPeekTimestamp) {
     timestamps.push(lastPeekTimestamp);
   }
 
   if (blocks) {
-    blocks.forEach(block => {
+    blocks.forEach((block) => {
       if (block.timestamp) {
         timestamps.push(block.timestamp);
       }
@@ -26,18 +25,16 @@ function getLatestTimestamp(
     return value;
   });
 
-  return timestampNumbers.length 
-    ? Math.max(...timestampNumbers) 
-    : undefined;
+  return timestampNumbers.length ? Math.max(...timestampNumbers) : undefined;
 }
 
 export default function useGetLatestPeakTimestampQuery() {
-  const latestPeakTimestamp = useRef<number|undefined>();
+  const latestPeakTimestamp = useRef<number | undefined>();
   const { data: blocks, isLoading, ...rest } = useGetLatestBlocksQuery(10);
 
   const newPeakTimestamp = useMemo(
     () => getLatestTimestamp(blocks, latestPeakTimestamp.current),
-    [blocks, latestPeakTimestamp],
+    [blocks, latestPeakTimestamp]
   );
 
   latestPeakTimestamp.current = newPeakTimestamp;

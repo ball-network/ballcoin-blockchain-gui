@@ -28,7 +28,6 @@ type StakingWithdrawProps = {
 
 type StakingWithdrawData = {
   withdrawAmount: string;
-  fingerprint: number;
 };
 
 export default function WalletStakingWithdraw(props: StakingWithdrawProps) {
@@ -40,15 +39,11 @@ export default function WalletStakingWithdraw(props: StakingWithdrawProps) {
     },
   });
   const openDialog = useOpenDialog();
-  const [stakingWithdraw, { isLoading: isStakingWithdrawLoading }] =
-    useStakingWithdrawMutation();
-  const { data: walletState, isLoading: isWalletSyncLoading } =
-    useGetSyncStatusQuery(
-      {},
-      {
-        pollingInterval: 10000,
-      }
-    );
+  const [stakingWithdraw, { isLoading: isStakingWithdrawLoading }] = useStakingWithdrawMutation();
+  const { data: walletState, isLoading: isWalletSyncLoading } = useGetSyncStatusQuery(
+    {},{
+    pollingInterval: 10000,
+  });
 
   const { wallet } = useWallet(walletId);
 

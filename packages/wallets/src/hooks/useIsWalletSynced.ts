@@ -1,4 +1,5 @@
 import { SyncingStatus } from '@ball-network/api';
+
 import useWalletState from './useWalletState';
 
 export default function useIsWalletSynced(): boolean {

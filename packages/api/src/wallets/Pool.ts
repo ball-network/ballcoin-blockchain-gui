@@ -1,16 +1,13 @@
-import Wallet from '../services/Wallet';
+import Wallet from '../services/WalletService';
 
 export default class PoolWallet extends Wallet {
-  async createNewWallet(
-    initialTargetState: Object,
-    fee: string, 
-    host: string = this.client.backupHost,
-  ) {
-    return super.createNewWallet('pool_wallet', {
-      mode: 'new',
-      fee,
-      host,
-      initialTargetState,
+  async createNewPoolWallet(args: { initialTargetState: Object; fee: string }) {
+    return super.createNewWallet({
+      walletType: 'pool_wallet',
+      options: {
+        mode: 'new',
+        ...args,
+      },
     });
   }
 }

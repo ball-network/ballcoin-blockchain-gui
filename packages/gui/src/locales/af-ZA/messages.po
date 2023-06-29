@@ -36,8 +36,8 @@ msgstr "'n Stroper (Harvester) is 'n robot wat werk op dieselfde masjien wat lan
 
 #: src/electron/main.tsx:365
 #: src/electron/main.tsx:443
-msgid "About Ball Blockchain"
-msgstr "Inligting oor Ball Blockchain"
+msgid "About BallCoin Blockchain"
+msgstr "Inligting oor BallCoin Blockchain"
 
 #: src/components/trading/ViewOffer.jsx:85
 msgid "Accept"
@@ -187,8 +187,8 @@ msgid "Block VDF Iterations"
 msgstr "Block VDF Iterasies"
 
 #: src/components/block/Block.jsx:311
-msgid "Block at height {0} in the Ball blockchain"
-msgstr "Blok is op hoogte {0} in die Ball blockchain"
+msgid "Block at height {0} in the BallCoin Blockchain"
+msgstr "Blok is op hoogte {0} in die BallCoin Blockchain"
 
 #: src/components/fullNode/FullNode.jsx:331
 #~ msgid "Block hash"
@@ -272,8 +272,8 @@ msgid "Ball"
 msgstr "Ball"
 
 #: src/electron/main.tsx:312
-msgid "Ball Blockchain Wiki"
-msgstr "Ball Blockchain Wiki"
+msgid "BallCoin Blockchain Wiki"
+msgstr "BallCoin Blockchain Wiki"
 
 #: src/components/wallet/Wallets.tsx:32
 msgid "Ball Wallet"
@@ -605,7 +605,7 @@ msgid "Error"
 msgstr ""
 
 #: src/components/wallet/standard/WalletStandard.tsx:292
-msgid "Error: Cannot send ballcoin to coloured address. Please enter a ballcoin address."
+msgid "Error: Cannot send ball to coloured address. Please enter a ball address."
 msgstr ""
 
 #: src/components/farm/card/FarmCardExpectedTimeToWin.tsx:32
@@ -1536,7 +1536,7 @@ msgstr ""
 
 #: src/components/wallet/rateLimited/WalletRateLimited.jsx:415
 #: src/components/wallet/rateLimited/WalletRateLimited.jsx:466
-msgid "Spending Limit (ballcoin per interval): {0}"
+msgid "Spending Limit (ball per interval): {0}"
 msgstr ""
 
 #: src/components/fullNode/FullNode.jsx:94
@@ -1584,8 +1584,8 @@ msgstr ""
 #~ msgstr "Sub Block Height"
 
 #: src/components/block/Block.jsx:338
-#~ msgid "Sub Block at height {0} in the Ball blockchain"
-#~ msgstr "Sub Block at height {0} in the Ball blockchain"
+#~ msgid "Sub Block at height {0} in the BallCoin Blockchain"
+#~ msgstr "Sub Block at height {0} in the BallCoin Blockchain"
 
 #: src/components/wallet/rateLimited/WalletRateLimited.jsx:357
 msgid "Submit"
@@ -1705,7 +1705,7 @@ msgid "This is the time the block was created by the farmer, which is before it 
 msgstr ""
 
 #: src/components/wallet/standard/WalletStandard.tsx:195
-msgid "This is the total amount of ballcoin in the blockchain at the current peak sub block that is controlled by your private keys. It includes frozen farming rewards, but not pending incoming and outgoing transactions."
+msgid "This is the total amount of ball in the blockchain at the current peak sub block that is controlled by your private keys. It includes frozen farming rewards, but not pending incoming and outgoing transactions."
 msgstr ""
 
 #: src/components/wallet/standard/WalletStandard.tsx:218

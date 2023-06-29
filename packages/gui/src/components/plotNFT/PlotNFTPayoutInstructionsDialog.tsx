@@ -1,27 +1,12 @@
-import React, { useState } from 'react';
+import { Button, CopyToClipboard, Flex, Link, Loading, TextField, Form } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
+import { Alert, Dialog, DialogActions, DialogTitle, DialogContent, Typography, InputAdornment } from '@mui/material';
+import React, { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import {
-  Button,
-  CopyToClipboard,
-  Flex,
-  Link,
-  Loading,
-  TextField,
-  Form,
-} from '@ball-network/core';
-import {
-  Alert,
-  Dialog,
-  DialogActions,
-  DialogTitle,
-  DialogContent,
-  Typography,
-  InputAdornment,
-} from '@mui/material';
+
+import usePayoutAddress from '../../hooks/usePayoutAddress';
 import PlotNFT from '../../types/PlotNFT';
 import PlotNFTExternal from '../../types/PlotNFTExternal';
-import usePayoutAddress from '../../hooks/usePayoutAddress';
 
 type FormData = {
   payoutAddress: string;
@@ -49,18 +34,17 @@ export default function PlotNFTPayoutInstructionsDialog(props: Props) {
   const currentPayoutAddress = useWatch<string>({
     name: 'payoutAddress',
     control: methods.control,
-  })
+  });
 
   function handleClose() {
     onClose();
   }
 
   async function handleSubmit(values) {
-    const { payoutAddress } = values;
     try {
       setError(undefined);
       setLoading(true);
-      await setPayoutAddress(payoutAddress);
+      await setPayoutAddress(values.payoutAddress);
     } catch (e) {
       setError(e);
     } finally {
@@ -71,7 +55,8 @@ export default function PlotNFTPayoutInstructionsDialog(props: Props) {
   function handleDialogClose(event: any, reason: any) {
     if (reason !== 'backdropClick' || reason !== 'EscapeKeyDown') {
       onClose();
-    }}
+    }
+  }
 
   return (
     <Dialog onClose={handleDialogClose} maxWidth="md" open={open}>
@@ -104,11 +89,9 @@ export default function PlotNFTPayoutInstructionsDialog(props: Props) {
 
                 <Typography variant="body2" color="textSecondary">
                   <Trans>
-                    These are the instructions for how the farmer wants to get
-                    paid. By default this will be an BALL address, but it can be
-                    set to any string with a size of less than 1024 characters, so
-                    it can represent another blockchain or payment system
-                    identifier.
+                    These are the instructions for how the farmer wants to get paid. By default this will be an BALL
+                    address, but it can be set to any string with a size of less than 1024 characters, so it can
+                    represent another blockchain or payment system identifier.
                   </Trans>{' '}
                   <Link
                     target="_blank"
@@ -134,8 +117,3 @@ export default function PlotNFTPayoutInstructionsDialog(props: Props) {
     </Dialog>
   );
 }
-
-PlotNFTPayoutInstructionsDialog.defaultProps = {
-  open: false,
-  onClose: () => {},
-};

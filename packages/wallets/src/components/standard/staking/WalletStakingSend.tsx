@@ -28,7 +28,6 @@ type StakingSendProps = {
 
 type StakingSendData = {
   stakingAmount: string;
-  fingerprint: number;
 };
 
 export default function WalletStakingSend(props: StakingSendProps) {
@@ -40,15 +39,11 @@ export default function WalletStakingSend(props: StakingSendProps) {
     },
   });
   const openDialog = useOpenDialog();
-  const [stakingSend, { isLoading: isStakingSendLoading }] =
-    useStakingSendMutation();
-  const { data: walletState, isLoading: isWalletSyncLoading } =
-    useGetSyncStatusQuery(
-      {},
-      {
-        pollingInterval: 10000,
-      }
-    );
+  const [stakingSend, { isLoading: isStakingSendLoading }] = useStakingSendMutation();
+  const { data: walletState, isLoading: isWalletSyncLoading } = useGetSyncStatusQuery(
+  {}, {
+    pollingInterval: 10000,
+  });
 
   const { wallet } = useWallet(walletId);
 

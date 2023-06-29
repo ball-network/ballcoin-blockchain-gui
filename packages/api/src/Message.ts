@@ -1,17 +1,23 @@
 import { randomBytes } from 'crypto-browserify';
 import JSONbig from 'json-bigint';
+
 import type MessageInterface from './@types/MessageInterface';
-import ServiceName from './constants/ServiceName';
+import { type ServiceNameValue } from './constants/ServiceName';
 import toCamelCase from './utils/toCamelCase';
-import toSnakeCase from './utils/toSnakeCase';
 import toSafeNumber from './utils/toSafeNumber';
+import toSnakeCase from './utils/toSnakeCase';
 
 export default class Message implements MessageInterface {
   command: string;
+
   data: Object;
-  origin: ServiceName;
-  destination: ServiceName;
+
+  origin: ServiceNameValue;
+
+  destination: ServiceNameValue;
+
   ack: boolean;
+
   requestId: string;
 
   constructor(options: MessageInterface) {
@@ -23,7 +29,7 @@ export default class Message implements MessageInterface {
       ack = false,
       requestId = randomBytes(32).toString('hex'),
     } = options;
-  
+
     this.command = command;
     this.origin = origin;
     this.destination = destination;
@@ -42,14 +48,16 @@ export default class Message implements MessageInterface {
       request_id: this.requestId,
     };
 
-    const formatedData = useSnakeCase
-      ? toSnakeCase(data)
-      : data;
+    const formatedData = useSnakeCase ? toSnakeCase(data) : data;
 
     return JSONbig.stringify(formatedData);
   }
 
   static fromJSON(json: string, useCamelCase: boolean): Message {
+    interface MessageSnakeCase extends Message {
+      request_id?: Message['requestId'];
+    }
+
     const {
       command,
       data,
@@ -57,11 +65,11 @@ export default class Message implements MessageInterface {
       destination,
       ack,
       request_id: requestId,
-    } = toSafeNumber(JSONbig.parse(json));
+    }: MessageSnakeCase = toSafeNumber(JSONbig.parse(json)) as any;
 
     return new Message({
       command,
-      data: useCamelCase ? toCamelCase(data): data,
+      data: useCamelCase ? toCamelCase(data) : data,
       origin,
       destination,
       ack,

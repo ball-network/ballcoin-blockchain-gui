@@ -1,10 +1,11 @@
 import React, { useEffect, useState, memo } from 'react';
 import styled from 'styled-components';
 
-const StyledIframe = styled(({ isVisible, ...rest }) => <iframe {...rest} />)`
+const StyledIframe = styled(({ isVisible, miniThumb, ...rest }) => <iframe {...rest} />)`
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: ${({ miniThumb }) => (miniThumb ? '50px' : '100%')};
+  height: ${({ miniThumb }) => (miniThumb ? '50px' : '100%')};
+  border-radius: ${({ miniThumb }) => (miniThumb ? '10px' : 0)};
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
 `;
 
@@ -15,6 +16,7 @@ export type SandboxIframeProps = {
   onLoadedChange?: (loaded: boolean) => void;
   hideUntilLoaded?: boolean;
   allowPointerEvents?: boolean;
+  miniThumb?: boolean;
 };
 
 function SandboxedIframe(props: SandboxIframeProps) {
@@ -25,6 +27,7 @@ function SandboxedIframe(props: SandboxIframeProps) {
     onLoadedChange,
     hideUntilLoaded = false,
     allowPointerEvents = false,
+    miniThumb = false,
   } = props;
 
   const [loaded, setLoaded] = useState(false);
@@ -32,7 +35,7 @@ function SandboxedIframe(props: SandboxIframeProps) {
   useEffect(() => {
     setLoaded(false);
     onLoadedChange?.(false);
-  }, [srcDoc]);
+  }, [onLoadedChange, srcDoc]);
 
   function handleLoad() {
     setLoaded(true);
@@ -50,8 +53,9 @@ function SandboxedIframe(props: SandboxIframeProps) {
       frameBorder="0"
       onLoad={handleLoad}
       isVisible={isVisible}
-      allowFullScreen={true}
+      allowFullScreen
       style={{ pointerEvents: allowPointerEvents ? 'auto' : 'none' }}
+      miniThumb={miniThumb}
     />
   );
 }

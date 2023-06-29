@@ -1,9 +1,10 @@
+import { useCreateNewPoolWalletMutation } from '@ball-network/api-react';
+import { Flex, Suspender } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
 import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { Trans } from '@lingui/macro';
-import { useCreateNewPoolWalletMutation } from '@ball-network/api-react';
-import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
-import { Flex, Suspender } from '@ball-network/core';
+
 import PlotNFTState from '../../constants/PlotNFTState';
 import useUnconfirmedPlotNFTs from '../../hooks/useUnconfirmedPlotNFTs';
 import PlotNFTSelectPool, { SubmitData } from './select/PlotNFTSelectPool';
@@ -19,7 +20,7 @@ export default function PlotNFTAdd(props: Props) {
   const [createNewPoolWallet] = useCreateNewPoolWalletMutation();
 
   if (isLoadingUnconfirmedPlotNFTs) {
-    return <Suspender />
+    return <Suspender />;
   }
 
   async function handleSubmit(data: SubmitData) {
@@ -29,17 +30,14 @@ export default function PlotNFTAdd(props: Props) {
       initialTargetState: { state },
     } = data;
 
-    const { transaction, ...rest } = await createNewPoolWallet({
+    const { transaction } = await createNewPoolWallet({
       initialTargetState,
       fee,
     }).unwrap();
 
     addUnconfirmedPlotNFT({
       transactionId: transaction.name,
-      state:
-        state === 'SELF_POOLING'
-          ? PlotNFTState.SELF_POOLING
-          : PlotNFTState.FARMING_TO_POOL,
+      state: state === 'SELF_POOLING' ? PlotNFTState.SELF_POOLING : PlotNFTState.FARMING_TO_POOL,
       poolUrl: initialTargetState.poolUrl,
     });
 
@@ -61,17 +59,11 @@ export default function PlotNFTAdd(props: Props) {
         title={<Trans>Want to Join a Pool? Create a Plot NFT</Trans>}
         description={
           <Trans>
-            Join a pool and get consistent BALL farming rewards. The average
-            returns are the same, but it is much less volatile. Assign plots to
-            a plot NFT. You can easily switch pools without having to re-plot.
+            Join a pool and get consistent BALL farming rewards. The average returns are the same, but it is much less
+            volatile. Assign plots to a plot NFT. You can easily switch pools without having to re-plot.
           </Trans>
         }
       />
     </>
   );
 }
-
-PlotNFTAdd.defaultProps = {
-  step: undefined,
-  onCancel: undefined,
-};

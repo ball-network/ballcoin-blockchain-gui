@@ -1,18 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Alert,
-  Paper,
-  TableRow,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-} from '@mui/material';
-import moment from 'moment';
-import { Trans } from '@lingui/macro';
 import { toBech32m } from '@ball-network/api';
 import { useGetBlockQuery, useGetBlockRecordQuery } from '@ball-network/api-react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
   Back,
   Button,
@@ -30,24 +17,40 @@ import {
   mojoToBall,
   Suspender,
 } from '@ball-network/core';
-import { hex_to_array, arr_to_hex, sha256 } from '../../util/utils';
+import { Trans } from '@lingui/macro';
+import { Alert, Paper, TableRow, Table, TableBody, TableCell, TableContainer } from '@mui/material';
+import moment from 'moment';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+
+import { hexToArray, arrToHex, sha256} from '../../util/utils';
 import BlockTitle from './BlockTitle';
 
-async function computeNewPlotId(block) {
-  const { poolPublicKey, plotPublicKey } = block.rewardChainBlock.proofOfSpace;
+async function computeNewPlotId(block, plotPublicKey) {
+  const { poolPublicKey } = block.rewardChainBlock.proofOfSpace;
   if (!poolPublicKey || !plotPublicKey) {
     return undefined;
   }
-  let buf = hex_to_array(poolPublicKey);
-  buf = buf.concat(hex_to_array(plotPublicKey));
+  let buf = hexToArray(poolPublicKey);
+  buf = buf.concat(plotPublicKey);
   const bufHash = await sha256(buf);
-  return arr_to_hex(bufHash);
+  return arrToHex(bufHash);
+}
+
+async function computePlotPublicKey(block) {
+  const { localPublicKey, farmerPublicKey, poolContractPuzzleHash } = block.rewardChainBlock.proofOfSpace;
+  if (!localPublicKey) {
+    return undefined;
+  }
+  return undefined;
+  // return await getPlotPublicKey(localPublicKey, farmerPublicKey, poolContractPuzzleHash)
 }
 
 export default function Block() {
   const { headerHash } = useParams();
   const navigate = useNavigate();
   const [newPlotId, setNewPlotId] = useState();
+  const [plotPublicKey, setPlotPublicKey] = useState();
   const [nextSubBlocks, setNextSubBlocks] = useState([]);
   const currencyCode = useCurrencyCode();
 
@@ -77,13 +80,18 @@ export default function Block() {
     },
     {
       skip: !blockRecord?.prevHash || !blockRecord?.height,
-    },
+    }
   );
 
-  async function updateNewPlotId(block) {
-    if (block) {
-      setNewPlotId(await computeNewPlotId(block));
+  async function updateNewPlotId(blockLocal) {
+    if (blockLocal) {
+      const plotPK = await computePlotPublicKey(blockLocal);
+      if(plotPK) {
+        setPlotPublicKey(arrToHex(await sha256(plotPK)));
+      }
+      setNewPlotId(await computeNewPlotId(blockLocal, plotPK));
     } else {
+      setPlotPublicKey(undefined);
       setNewPlotId(undefined);
     }
   }
@@ -92,8 +100,7 @@ export default function Block() {
     updateNewPlotId(block);
   }, [block]);
 
-  const isLoading =
-    isLoadingBlock || isLoadingBlockRecord || isLoadingPrevBlockRecord;
+  const isLoading = isLoadingBlock || isLoadingBlockRecord || isLoadingPrevBlockRecord;
   const error = errorBlock || errorBlockRecord || errorPrevBlockRecord;
 
   const hasPreviousBlock = !!blockRecord?.prevHash && !!blockRecord?.height;
@@ -153,19 +160,14 @@ export default function Block() {
   }
 
   const difficulty =
-    prevBlockRecord && blockRecord
-      ? blockRecord.weight - prevBlockRecord.weight
-      : blockRecord?.weight ?? 0;
+    prevBlockRecord && blockRecord ? blockRecord.weight - prevBlockRecord.weight : blockRecord?.weight ?? 0;
 
   const poolReward = mojoToBall(calculatePoolReward(blockRecord.height));
-  const baseFarmerReward = mojoToBall(
-    calculateBaseFarmerReward(blockRecord.height),
-  );
+  const baseFarmerReward = mojoToBall(calculateBaseFarmerReward(blockRecord.height));
   const communityReward = mojoToBall(calculateCommunityReward(blockRecord.height));
   const timelordReward = mojoToBall(calculateTimelordFee(blockRecord.height));
 
-  const ballFees =
-    blockRecord.fees !== undefined ? mojoToBall(blockRecord.fees) : '';
+  const ballFees = blockRecord.fees !== undefined ? mojoToBall(blockRecord.fees) : '';
 
   const rows = [
     {
@@ -174,13 +176,10 @@ export default function Block() {
     },
     {
       name: <Trans>Timestamp</Trans>,
-      value: blockRecord.timestamp
-        ? moment(blockRecord.timestamp * 1000).format('LLL')
-        : null,
+      value: blockRecord.timestamp ? moment(blockRecord.timestamp * 1000).format('LLL') : null,
       tooltip: (
         <Trans>
-          This is the time the block was created by the farmer, which is before
-          it is finalized with a proof of time
+          This is the time the block was created by the farmer, which is before it is finalized with a proof of time
         </Trans>
       ),
     },
@@ -191,18 +190,11 @@ export default function Block() {
     {
       name: <Trans>Weight</Trans>,
       value: <FormatLargeNumber value={blockRecord.weight} />,
-      tooltip: (
-        <Trans>
-          Weight is the total added difficulty of all blocks up to and including
-          this one
-        </Trans>
-      ),
+      tooltip: <Trans>Weight is the total added difficulty of all blocks up to and including this one</Trans>,
     },
     {
       name: <Trans>Previous Header Hash</Trans>,
-      value: (
-        <Link onClick={handleShowPreviousBlock}>{blockRecord.prevHash}</Link>
-      ),
+      value: <Link onClick={handleShowPreviousBlock}>{blockRecord.prevHash}</Link>,
     },
     {
       name: <Trans>Difficulty</Trans>,
@@ -213,34 +205,25 @@ export default function Block() {
       value: <FormatLargeNumber value={blockRecord.totalIters} />,
       tooltip: (
         <Trans>
-          The total number of VDF (verifiable delay function) or proof of time
-          iterations on the whole chain up to this block.
+          The total number of VDF (verifiable delay function) or proof of time iterations on the whole chain up to this
+          block.
         </Trans>
       ),
     },
     {
       name: <Trans>Block VDF Iterations</Trans>,
-      value: (
-        <FormatLargeNumber
-          value={block.rewardChainBlock.challengeChainIpVdf.numberOfIterations}
-        />
-      ),
+      value: <FormatLargeNumber value={block.rewardChainBlock.challengeChainIpVdf.numberOfIterations} />,
       tooltip: (
-        <Trans>
-          The total number of VDF (verifiable delay function) or proof of time
-          iterations on this block.
-        </Trans>
+        <Trans>The total number of VDF (verifiable delay function) or proof of time iterations on this block.</Trans>
       ),
     },
     {
       name: <Trans>Proof of Space Size</Trans>,
-      value: (
-        <FormatLargeNumber value={block.rewardChainBlock.proofOfSpace.size} />
-      ),
+      value: <FormatLargeNumber value={block.rewardChainBlock.proofOfSpace.size} />,
     },
     {
       name: <Trans>Plot Public Key</Trans>,
-      value: block.rewardChainBlock.proofOfSpace.plotPublicKey,
+      value: plotPublicKey,
     },
     {
       name: <Trans>Pool Public Key</Trans>,
@@ -248,25 +231,16 @@ export default function Block() {
     },
     {
       name: <Trans>Farmer Puzzle Hash</Trans>,
-      value: currencyCode
-        ? toBech32m(blockRecord.farmerPuzzleHash, currencyCode.toLowerCase())
-        : '',
+      value: currencyCode ? toBech32m(blockRecord.farmerPuzzleHash, currencyCode.toLowerCase()) : '',
     },
     {
       name: <Trans>Pool Puzzle Hash</Trans>,
-      value: currencyCode
-        ? toBech32m(blockRecord.poolPuzzleHash, currencyCode.toLowerCase())
-        : '',
+      value: currencyCode ? toBech32m(blockRecord.poolPuzzleHash, currencyCode.toLowerCase()) : '',
     },
     {
       name: <Trans>Plot Id</Trans>,
       value: newPlotId,
-      tooltip: (
-        <Trans>
-          The seed used to create the plot. This depends on the pool pk and plot
-          pk.
-        </Trans>
-      ),
+      tooltip: <Trans>The seed used to create the plot. This depends on the pool pk and plot pk.</Trans>,
     },
     {
       name: <Trans>Transactions Filter Hash</Trans>,
@@ -283,11 +257,7 @@ export default function Block() {
     {
       name: <Trans>Fees Amount</Trans>,
       value: ballFees ? `${ballFees} ${currencyCode}` : '',
-      tooltip: (
-        <Trans>
-          The total transactions fees in this block. Rewarded to the farmer.
-        </Trans>
-      ),
+      tooltip: <Trans>The total transactions fees in this block. Rewarded to the farmer.</Trans>,
     },
     {
       name: <Trans>Community Reward Amount</Trans>,
@@ -304,17 +274,12 @@ export default function Block() {
       <Card
         title={
           <Back variant="h5">
-            <Trans>
-              Block at height {blockRecord.height} in the Ball blockchain
-            </Trans>
+            <Trans>Block at height {blockRecord.height} in the BallCoin Blockchain</Trans>
           </Back>
         }
         action={
           <Flex gap={1}>
-            <Button
-              onClick={handleShowPreviousBlock}
-              disabled={!hasPreviousBlock}
-            >
+            <Button onClick={handleShowPreviousBlock} disabled={!hasPreviousBlock}>
               <Trans>Previous</Trans>
             </Button>
             <Button onClick={handleShowNextBlock} disabled={!hasNextBlock}>
@@ -328,10 +293,10 @@ export default function Block() {
           <Table>
             <TableBody>
               {rows.map((row, index) => (
+                // eslint-disable-next-line react/no-array-index-key -- Number of rows never change
                 <TableRow key={index}>
                   <TableCell component="th" scope="row">
-                    {row.name}{' '}
-                    {row.tooltip && <TooltipIcon>{row.tooltip}</TooltipIcon>}
+                    {row.name} {row.tooltip && <TooltipIcon>{row.tooltip}</TooltipIcon>}
                   </TableCell>
                   <TableCell onClick={row.onClick} align="right">
                     {row.value}

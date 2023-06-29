@@ -1,17 +1,9 @@
-import React from 'react';
 import { Trans } from '@lingui/macro';
 import { Box } from '@mui/material';
-import styled from 'styled-components';
+import React from 'react';
+
 import StateColor from '../../constants/StateColor';
 import Amount, { AmountProps } from '../Amount';
-
-const StyledWarning = styled(Box)`
-  color: ${StateColor.WARNING};
-`;
-
-const StyledError = styled(Box)`
-  color: ${StateColor.ERROR};
-`;
 
 type FeeProps = AmountProps;
 
@@ -23,22 +15,22 @@ export default function Fee(props: FeeProps) {
         const isLow = mojo.gt('0') && mojo.lt('1');
 
         if (!value) {
-          return;
+          return null;
         }
 
         if (isHigh) {
           return (
-            <StyledWarning>
+            <Box sx={{ color: () => StateColor.WARNING }}>
               <Trans>Value seems high</Trans>
-            </StyledWarning>
+            </Box>
           );
         }
 
         if (isLow) {
           return (
-            <StyledError>
+            <Box sx={{ color: () => StateColor.ERROR }}>
               <Trans>Incorrect value</Trans>
-            </StyledError>
+            </Box>
           );
         }
 

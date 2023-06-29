@@ -1,16 +1,17 @@
-import React from 'react';
-import isElectron from 'is-electron';
-import { Trans } from '@lingui/macro';
 import { AlertDialog, useOpenDialog } from '@ball-network/core';
 import { dialog } from '@electron/remote';
+import { Trans } from '@lingui/macro';
+import isElectron from 'is-electron';
+import React from 'react';
 
 type Options = {
+  properties?: string[];
   defaultPath?: string;
   buttonLabel?: string;
 };
 
 export default function useSelectDirectory(
-  defaultOptions?: Options,
+  defaultOptions?: Options
 ): (options?: Options) => Promise<string | undefined> {
   const openDialog = useOpenDialog();
 
@@ -22,16 +23,20 @@ export default function useSelectDirectory(
         ...defaultOptions,
         ...options,
       });
-      const filePath = result.filePaths[0];
 
-      return filePath;
+      if (result.canceled) {
+        return undefined;
+      }
+
+      return result.filePaths[0];
     }
 
     openDialog(
       <AlertDialog>
         <Trans>This feature is available only from the GUI.</Trans>
-      </AlertDialog>,
+      </AlertDialog>
     );
+    return undefined;
   }
 
   return handleSelect;

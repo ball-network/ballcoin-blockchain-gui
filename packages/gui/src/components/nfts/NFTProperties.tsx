@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
 import type { NFTAttribute } from '@ball-network/api';
-import { Trans } from '@lingui/macro';
 import { CopyToClipboard, Flex, Tooltip } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import isRankingAttribute from '../../util/isRankingAttribute';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
+
+import useOpenUnsafeLink from '../../hooks/useOpenUnsafeLink';
+import isRankingAttribute from '../../util/isRankingAttribute';
 
 /* ========================================================================== */
 
@@ -32,8 +34,14 @@ export type NFTPropertiesProps = {
 
 export function NFTProperty(props: NFTPropertyProps) {
   const { attribute, size = 'regular', color = 'secondary' } = props;
+  const openUnsafeLink = useOpenUnsafeLink();
   const theme = useTheme();
-  const { name, trait_type, value } = attribute;
+  // eslint-disable-next-line @typescript-eslint/naming-convention -- Comes from API like this
+  const { name, trait_type, value: rawValue } = attribute;
+  if (typeof rawValue === 'object') {
+    return null;
+  }
+  const value = rawValue.toString();
   const title = trait_type ?? name;
   const borderStyle = {
     border: 1,
@@ -42,14 +50,28 @@ export function NFTProperty(props: NFTPropertyProps) {
     p: size === 'small' ? 1 : 2,
   };
 
+  function renderValueWithUrls(val: string) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const matches = val.split(urlRegex);
+    if (matches.length > 1) {
+      return matches.map((match, index) => {
+        if (index % 2 === 1) {
+          return (
+            <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => openUnsafeLink(match)}>
+              {match}
+            </span>
+          );
+        }
+        return match !== '' ? <span>{match}</span> : null;
+      });
+    }
+    return val;
+  }
+
   return (
     <Grid xs={12} sm={6} item>
       <Box {...borderStyle}>
-        <Typography
-          variant={size === 'small' ? 'caption' : 'body1'}
-          color={color}
-          noWrap
-        >
+        <Typography variant={size === 'small' ? 'caption' : 'body1'} color={color} noWrap>
           {title}
         </Typography>
         {/* <Tooltip title={value} copyToClipboard={true}> */}
@@ -70,12 +92,8 @@ export function NFTProperty(props: NFTPropertyProps) {
             </Flex>
           }
         >
-          <Typography
-            variant={size === 'small' ? 'body2' : 'h6'}
-            color={color}
-            noWrap
-          >
-            {value}
+          <Typography variant={size === 'small' ? 'body2' : 'h6'} color={color} noWrap>
+            {renderValueWithUrls(value)}
           </Typography>
         </Tooltip>
       </Box>
@@ -103,8 +121,8 @@ export default function NFTProperties(props: NFTPropertiesProps) {
         <Trans>Properties</Trans>
       </Typography>
       <Grid spacing={2} container>
-        {valueAttributes.map((attribute, index) => (
-          <React.Fragment key={`${attribute?.name}-${index}`}>
+        {valueAttributes.map((attribute) => (
+          <React.Fragment key={JSON.stringify(attribute)}>
             <NFTProperty attribute={attribute} />
           </React.Fragment>
         ))}

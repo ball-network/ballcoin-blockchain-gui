@@ -2,7 +2,7 @@ import React from 'react';
 import { Trans, t } from '@lingui/macro';
 import {
   useLocalStorage,
-  useFindPoolNFTQuery,
+  useFindPoolNFTMutation,
   useRecoverPoolNFTMutation,
 } from '@ball-network/api-react';
 import {
@@ -14,89 +14,113 @@ import {
   CardSimple,
   TooltipIcon,
   mojoToBall,
+  mojoToBallLocaleString,
+  useCurrencyCode,
+  useLocale,
 } from '@ball-network/core';
+
 import {Grid, Typography} from '@mui/material';
 import { useForm } from 'react-hook-form';
 import useWallet from "../../../hooks/useWallet";
-import useWalletHumanValue from "../../../hooks/useWalletHumanValue";
 
 type NFTRecoverProps = {
   walletId: number;
 };
-type NFTRecoveryData = {
+
+type FindNFTData = {
   launcherId: string;
+  contractAddress: string;
 };
+
+type RecoverNFTData = {
+  launcherId: string;
+  contractAddress: string;
+};
+
 function validLauncherId(id: string) {
   return !!id && (id.startsWith("0x") && 66 === id.length || !id.startsWith("0x") && 64 === id.length)
 }
 
 export default function NFTRecover(props: NFTRecoverProps) {
   const { walletId } = props;
-  const [launcherId, setLauncherId] = useLocalStorage<string>('launcher_id', '');
+  const currencyCode = useCurrencyCode();
+  const [locale] = useLocale();
+  const { wallet } = useWallet(walletId);
+  const [launcherId, setLauncherId] = useLocalStorage<string>('launcher_id', "");
+  const [contractAddress, setContractAddress] = useLocalStorage<string>('contract_address', "");
   const [typography, setContent] = React.useState(" ")
-  const methods = useForm<NFTRecoveryData>({
+  const [nftData, setNFTData] = React.useState({
+    totalAmount: 0,
+    balanceAmount: 0,
+    recordAmount: 0,
+    contractAddress: "",
+  })
+  const [recoverPoolNFT, { isLoading: isRecoverPoolNFTLoading, error: recoverPoolNFTError }] = useRecoverPoolNFTMutation();
+  const [findPoolNFT, { isLoading: isFindPoolNFTLoading, error: findPoolNFTError }] = useFindPoolNFTMutation();
+  const findMethods = useForm<FindNFTData>({
     defaultValues: {
       launcherId: launcherId,
+      contractAddress: contractAddress,
     },
   });
-  const [recoverPoolNFT, { isLoading: isRecoverPoolNFTLoading, error: recoverPoolNFTError }] =
-    useRecoverPoolNFTMutation();
-  const { data: poolNFT, isLoading: isLoadingFindPoolNFT, error: findPoolNFTNFTError } =
-    useFindPoolNFTQuery(
-      {
-        launcherId
-      },
-      {
-        pollingInterval: 10000,
-      }
-  );
-  const { wallet, unit = '', loading } = useWallet(walletId);
+  const recoverMethods = useForm<RecoverNFTData>({
+    defaultValues: {
+      launcherId: launcherId,
+      contractAddress: contractAddress,
+    },
+  });
+  if (!wallet) {
+    return null;
+  }
 
-  const isLoading = loading || isLoadingFindPoolNFT;
-
-  const totalAmount = useWalletHumanValue(wallet, poolNFT?.totalAmount, unit);
-  const balanceAmount = useWalletHumanValue(wallet, poolNFT?.balanceAmount, unit);
-  const recordAmountVal =poolNFT?.recordAmount;
-  const recordAmount = useWalletHumanValue(wallet, recordAmountVal, unit);
-  const contractAddress = poolNFT?.contractAddress || '';
-
-  async function handleNFTSearch(data: NFTRecoveryData) {
-    const launcherIdVal = data.launcherId.trim();
-    if (!validLauncherId(launcherIdVal)) {
+  async function handleNFTSearch(data: FindNFTData) {
+    const launcher = data.launcherId.trim();
+    if (!validLauncherId(launcher)) {
       throw new Error(t`Please enter a valid NFT Launcher Id`);
     }
-    setContent('');
-    setLauncherId(launcherIdVal);
+    const address = data.contractAddress.trim();
+    if (launcher != launcherId) {
+      setLauncherId(launcher);
+    }
+    const response = await findPoolNFT({
+      launcherId: launcher,
+      contractAddress: address,
+    }).unwrap();
+    const err = findPoolNFTError ? findPoolNFTError+'' : ''
+    setContent(err);
+    if (!err) {
+      setNFTData(response);
+      if (contractAddress != response.contractAddress) {
+        setContractAddress(response.contractAddress);
+      }
+    }
   }
-  async function handleSubmit(data: NFTRecoveryData) {
-    if (isRecoverPoolNFTLoading) {
+
+  async function handleSubmit() {
+    if (isRecoverPoolNFTLoading || !launcherId) {
       return;
     }
-    const launcherIdVal = data.launcherId.trim();
-    if (!validLauncherId(launcherIdVal)) {
-      throw new Error(t`Please enter a valid NFT Launcher Id`);
-    }
     const response = await recoverPoolNFT({
-     launcherId: launcherIdVal,
+     launcherId,
+     contractAddress,
     }).unwrap();
     const t1 = t`Recovered Amount:`;
     const t2 = t`Status:`;
     const t3 = response.status == 'SUCCESS' ? t`SUCCESS` : t`FAILED`;
-    setContent(t1 + " " + mojoToBall(response.amount) + " " + unit+", "+t2 + " "+t3 +
-      (recoverPoolNFTError ? ', ' + recoverPoolNFTError+' ' : ' ') +
-      (findPoolNFTNFTError ? ', ' + findPoolNFTNFTError+' ' : ' '));
+    setContent(t1 + " " + mojoToBall(response.amount) + " " + currencyCode+", "+t2 + " "+t3 +
+      (recoverPoolNFTError ? ', ' + recoverPoolNFTError+' ' : ' '));
   }
 
   return (
       <Flex gap={2} flexDirection="column">
-        <Form methods={methods} onSubmit={handleNFTSearch}>
+        <Form methods={findMethods} onSubmit={handleNFTSearch}>
         <Typography variant="h6">
           <Trans>NFT Recover</Trans>
           &nbsp;
           <TooltipIcon>
-            <Trans>visiting the Pool tab of your BALLCOIN-GUI.
-              using this command: ballcoin plotNFT show.
-              Note: you have to do this on the BALLCOIN client, not the fork!
+            <Trans>visiting the Pool tab of your CHIA-GUI.
+              using this command: chia plotNFT show.
+              Note: you have to do this on the CHIA client, not the fork!
             </Trans>
           </TooltipIcon>
         </Typography>
@@ -120,7 +144,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
                     variant="contained"
                     color="primary"
                     type="submit"
-                    loading={isLoading}
+                    loading={isFindPoolNFTLoading}
                     data-testid="NFTRecover-find"
                   >
                     <Trans>Find</Trans>
@@ -132,14 +156,11 @@ export default function NFTRecover(props: NFTRecoverProps) {
           <Grid xs={12} md={12} item>
             <Card>
               <TextField
-                label={<Trans>contract address</Trans>}
-                value={contractAddress}
+                name="contractAddress"
                 variant="filled"
                 color="secondary"
-                inputProps={{
-                  'data-testid': 'NFTRecover-contractAddress',
-                  readOnly: true,
-                }}
+                label={<Trans>contract address</Trans>}
+                data-testid="NFTRecover-contractAddress"
                 fullWidth
               />
           </Card>
@@ -149,7 +170,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Total Balance</Trans>}
               tooltip={<Trans>Total Balance</Trans>}
-              value={totalAmount}
+              value={mojoToBallLocaleString(nftData.totalAmount, locale)}
             />
           </Grid>
           <Grid xs={12} md={4} item>
@@ -157,7 +178,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Not Available Balance</Trans>}
               tooltip={<Trans>Not Available Balance</Trans>}
-              value={balanceAmount}
+              value={mojoToBallLocaleString(nftData.balanceAmount, locale)}
             />
           </Grid>
           <Grid xs={12} md={4} item>
@@ -165,19 +186,19 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Available Balance</Trans>}
               tooltip={<Trans>You can only claim rewards older than 7 days</Trans>}
-              value={recordAmount}
+              value={mojoToBallLocaleString(nftData.recordAmount, locale)}
             />
           </Grid>
         </Grid>
         </Form>
         <Typography variant="body1" color="textSecondary"  dangerouslySetInnerHTML={{__html: typography}} />
         <Flex justifyContent="flex-end" gap={1}>
-          <Form methods={methods} onSubmit={handleSubmit}>
+          <Form methods={recoverMethods} onSubmit={handleSubmit}>
             <ButtonLoading
               variant="contained"
               color="primary"
               type="submit"
-              disable={recordAmountVal==0||contractAddress==''}
+              disable={nftData.recordAmount==0||nftData.contractAddress==""}
               loading={isRecoverPoolNFTLoading}
               data-testid="NFTRecover-Recover"
             >

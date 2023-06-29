@@ -1,16 +1,15 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { useFormContext } from 'react-hook-form';
-import { useLocalStorage, writeStorage } from '@rehooks/local-storage';
+import { usePrefs } from '@ball-network/api-react';
 import { ButtonSelected, CardStep, Flex, TextField } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { Typography } from '@mui/material';
-import useSelectDirectory from '../../../hooks/useSelectDirectory';
-import Plotter from '../../../types/Plotter';
+import React from 'react';
+import { useFormContext } from 'react-hook-form';
+
 import PlotLocalStorageKeys from '../../../constants/plotLocalStorage';
+import useSelectDirectory from '../../../hooks/useSelectDirectory';
 
 type Props = {
   step: number;
-  plotter: Plotter
 };
 
 export default function PlotAddSelectFinalDirectory(props: Props) {
@@ -20,13 +19,13 @@ export default function PlotAddSelectFinalDirectory(props: Props) {
 
   const finalLocation = watch('finalLocation');
   const hasFinalLocation = !!finalLocation;
-  const [defaultFinalDirPath] = useLocalStorage<string>(PlotLocalStorageKeys.FINALDIR);
+  const [defaultFinalDirPath, setDefaultFinalDirPath] = usePrefs<string>(PlotLocalStorageKeys.FINALDIR);
 
   async function handleSelect() {
     const location = await selectDirectory({ defaultPath: defaultFinalDirPath || undefined });
     if (location) {
       setValue('finalLocation', location, { shouldValidate: true });
-      writeStorage(PlotLocalStorageKeys.FINALDIR, location);
+      setDefaultFinalDirPath(location);
     }
   }
 
@@ -34,9 +33,8 @@ export default function PlotAddSelectFinalDirectory(props: Props) {
     <CardStep step={step} title={<Trans>Select Final Directory</Trans>}>
       <Typography variant="subtitle1">
         <Trans>
-          Select the final destination for the folder where you would like the
-          plot to be stored. We recommend you use a large slow hard drive (like
-          external HDD).
+          Select the final destination for the folder where you would like the plot to be stored. We recommend you use a
+          large slow hard drive (like external HDD).
         </Trans>
       </Typography>
 

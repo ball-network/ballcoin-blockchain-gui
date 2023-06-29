@@ -1,15 +1,11 @@
-import React from 'react';
-import { Box } from '@mui/material';
-import styled from 'styled-components';
 import { toBech32m } from '@ball-network/api';
+import { Box } from '@mui/material';
+import React from 'react';
+
 import useCurrencyCode from '../../hooks/useCurrencyCode';
-import Tooltip from '../Tooltip';
 import CopyToClipboard from '../CopyToClipboard';
 import Flex from '../Flex';
-
-const StyledValue = styled(Box)`
-  word-break: break-all;
-`;
+import Tooltip from '../Tooltip';
 
 type Props = {
   value: string;
@@ -19,17 +15,21 @@ type Props = {
 };
 
 export default function Address(props: Props) {
-  const { value, copyToClipboard, tooltip, children } = props;
-
+  const { value, copyToClipboard = false, tooltip = false, children } = props;
   const currencyCode = useCurrencyCode();
-  const address =
-    currencyCode && value ? toBech32m(value, currencyCode.toLowerCase()) : '';
+  const address = currencyCode && value ? toBech32m(value, currencyCode.toLowerCase()) : '';
 
   if (!children) {
     if (copyToClipboard) {
       return (
         <Flex alignItems="center" gap={1}>
-          <StyledValue>{address}</StyledValue>
+          <Box
+            sx={{
+              wordBreak: 'break-all',
+            }}
+          >
+            {address}
+          </Box>
           <CopyToClipboard value={address} fontSize="small" />
         </Flex>
       );
@@ -57,8 +57,3 @@ export default function Address(props: Props) {
 
   return children(address);
 }
-
-Address.defaultProps = {
-  copyToClipboard: false,
-  tooltip: false,
-};

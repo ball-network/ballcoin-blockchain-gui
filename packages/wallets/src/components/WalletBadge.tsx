@@ -1,11 +1,11 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { Tooltip } from '@ball-network/core';
-import { useGetCatListQuery } from '@ball-network/api-react';
-import { VerifiedUser as VerifiedUserIcon, VerifiedUserProps } from '@mui/icons-material';
-import styled from 'styled-components';
 import type { Wallet } from '@ball-network/api';
 import { WalletType } from '@ball-network/api';
+import { useGetCatListQuery } from '@ball-network/api-react';
+import { Tooltip } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { VerifiedUser as VerifiedUserIcon, VerifiedUserProps } from '@mui/icons-material';
+import React from 'react';
+import styled from 'styled-components';
 
 const StyledSmallBadge = styled(VerifiedUserIcon)`
   font-size: 1rem;
@@ -20,7 +20,7 @@ export default function WalletBadge(props: Props) {
   const { data: catList = [], isLoading } = useGetCatListQuery();
 
   if (!isLoading && wallet.type === WalletType.CAT) {
-    const token = catList.find((token) => token.assetId === wallet.meta?.assetId);
+    const token = catList.find((tokenItem) => tokenItem.assetId === wallet.meta?.assetId);
     if (token) {
       return (
         <Tooltip title={<Trans>This access token is verified</Trans>}>
@@ -32,4 +32,3 @@ export default function WalletBadge(props: Props) {
 
   return null;
 }
-

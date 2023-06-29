@@ -1,10 +1,12 @@
-# @ball-network/api
+# ballcoin-blockchain-gui/api
 
-![Alt text](https://www.ballcoin.top/img/ball_logo.svg)
+![Ball logo](https://www.ballcoin.top/wp-content/uploads/2022/09/ball-logo.svg)
 
-This library provides support for TypeScript/JavaScript [Ball](https://www.ballcoin.top) apps to access the [Ball Blockchain RPC](https://github.com/Ball-Network/ballcoin-blockchain/wiki/RPC-Interfaces), by making it easier to perform the following actions:
+![GitHub contributors](https://img.shields.io/github/contributors/Ball-Network/ballcoin-blockchain-gui?logo=GitHub)
 
-- Making requests to the Ball Blockchain RPC.
+This library provides support for TypeScript/JavaScript [Ball](https://www.ballcoin.top) apps to access the [BallCoin Blockchain RPC](https://docs.ballcoin.top/rpc/), by making it easier to perform the following actions:
+
+- Making requests to the BallCoin Blockchain RPC.
 - Catch responses and errors with standard try/catch and async/await syntax.
 - Catch error when the request has a timeout. Each request has a default timeout of 10 minutes.
 - Auto-connect to daemon when you send the first request.
@@ -15,13 +17,15 @@ This library provides support for TypeScript/JavaScript [Ball](https://www.ballc
 ## Example
 
 ```ts
-import Client, { Wallet } from '@ball-network/api';
+import { readFileSync } from "fs";
+import Client, { Wallet } from '@ball-network/api'; // or from "../ballcoin-blockchain/ballcoin-blockchain-gui/packages/api";
 import Websocket from 'ws';
 import sleep from 'sleep-promise';
 
 (async () => {
   const client = new Client({
-    url: 'wss://127.0.0.1:54000',
+    url: 'wss://127.0.0.1:38881',
+    // key and crt files should be in your homedir in: .ball/mainnet/config/ssl/daemon/
     cert: readFileSync('private_cert.crt'),
     key: readFileSync('private_key.key'),
     webSocket: Websocket;
@@ -30,18 +34,18 @@ import sleep from 'sleep-promise';
   const wallet = new Wallet(client);
 
   try {
-    // get list of available publick keys
+    // get list of available public keys
     const publicKeys = await wallet.getPublicKeys();
 
     // bind to sync changes
     const unsubscribeSyncChanges = wallet.onSyncChanged((syncData) => {
-      console.log('do something with synchronisation data');
+      console.log('do something with synchronization data');
     });
 
     // wait 5 minutes
     await sleep(1000 * 60 * 5);
 
-    // unubscribe from synchronisation changes
+    // unsubscribe from synchronization changes
     await unsubscribeSyncChanges();
 
     // wait 5 minutes
@@ -55,3 +59,7 @@ import sleep from 'sleep-promise';
   }
 })();
 ```
+
+## Development
+
+Please read and follow the main [README.md](https://github.com/Ball-Network/ballcoin-blockchain-gui) of this monorepo.

@@ -9,10 +9,11 @@ import {
   Flex,
   Card,
   CopyToClipboard,
+  useCurrencyCode,
+  mojoToBallLocaleString,
+  useLocale,
 } from '@ball-network/core';
 import {TextField, InputAdornment} from '@mui/material';
-import useWallet from '../../../hooks/useWallet';
-import useWalletHumanValue from '../../../hooks/useWalletHumanValue';
 import WalletStakingSend from "./WalletStakingSend";
 import WalletStakingWithdraw from "./WalletStakingWithdraw";
 
@@ -22,25 +23,20 @@ type StakingProps = {
 
 export default function WalletStaking(props: StakingProps) {
   const { walletId } = props;
-  const { data: fingerprint, isLoading: isLoadingFingerprint } =
-    useGetLoggedInFingerprintQuery();
-  const { data: stakingInfo, isLoading: isLoadingStakingInfo } =
-    useStakingInfoQuery(
-      {
-        fingerprint
-      },
-      {
-        pollingInterval: 10000,
-      }
-    );
+  const currencyCode = useCurrencyCode();
+  const [locale] = useLocale();
+  const { data: fingerprint, isLoading: isLoadingFingerprint } = useGetLoggedInFingerprintQuery();
+  const { data: stakingInfo, isLoading: isLoadingStakingInfo } = useStakingInfoQuery({
+    fingerprint
+  },{
+    pollingInterval: 10000,
+  });
 
-
-  const { wallet, unit = '' } = useWallet(walletId);
-  const balance = useWalletHumanValue(wallet, stakingInfo?.balance, '');
-
-  if (!wallet || !fingerprint || isLoadingFingerprint || isLoadingStakingInfo) {
+  if (!fingerprint || isLoadingFingerprint || isLoadingStakingInfo) {
     return null;
   }
+
+  const balance = mojoToBallLocaleString(stakingInfo?.balance, locale);
   const address = stakingInfo?.address || '';
 
   return (
@@ -60,7 +56,7 @@ export default function WalletStaking(props: StakingProps) {
               }}
               InputProps={{
                 endAdornment: (
-                  <InputAdornment position="end">{unit}</InputAdornment>
+                  <InputAdornment position="end">{currencyCode}</InputAdornment>
                 ),
               }}
               fullWidth

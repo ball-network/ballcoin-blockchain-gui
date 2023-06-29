@@ -1,13 +1,11 @@
-import React, { useMemo, ReactNode } from 'react';
 import { CssBaseline } from '@mui/material';
-import {
-  ThemeProvider as MaterialThemeProvider,
-  createTheme,
-} from '@mui/material/styles';
 import * as materialLocales from '@mui/material/locale';
+import { ThemeProvider as MaterialThemeProvider, createTheme } from '@mui/material/styles';
+import React, { useMemo, ReactNode } from 'react';
 import { ThemeProvider as StyledThemeProvider, createGlobalStyle } from 'styled-components';
-import Fonts from '../Fonts';
+
 import useLocale from '../../hooks/useLocale';
+import Fonts from '../Fonts';
 
 export function getMaterialLocale(locale: string) {
   if (!locale) {
@@ -43,7 +41,7 @@ export type ThemeProviderProps = {
 };
 
 export default function ThemeProvider(props: ThemeProviderProps) {
-  const { children, theme, global, fonts } = props;
+  const { children, theme, global = false, fonts = false } = props;
   const [locale] = useLocale();
 
   const finallTheme = useMemo(() => {
@@ -56,20 +54,11 @@ export default function ThemeProvider(props: ThemeProviderProps) {
       <MaterialThemeProvider theme={finallTheme}>
         <>
           <CssBaseline />
-          {global && (
-            <GlobalStyle />
-          )}
-          {fonts && (
-            <Fonts />
-          )}
+          {global && <GlobalStyle />}
+          {fonts && <Fonts />}
           {children}
         </>
       </MaterialThemeProvider>
     </StyledThemeProvider>
   );
 }
-
-ThemeProvider.defaultProps = {
-  fonts: false,
-  global: false,
-};

@@ -1,112 +1,50 @@
-import { Daemon, optionsForPlotter, defaultsForPlotter } from '@ball-network/api';
-import type { KeyringStatus, ServiceName, KeyData } from '@ball-network/api';
-import onCacheEntryAddedInvalidate from '../utils/onCacheEntryAddedInvalidate';
+import { Daemon, optionsForPlotter, defaultsForPlotter, PlotterName } from '@ball-network/api';
+import type { Plotter, PlotterMap, PlotterApi } from '@ball-network/api';
+
 import api, { baseQuery } from '../api';
+import onCacheEntryAddedInvalidate from '../utils/onCacheEntryAddedInvalidate';
+import { query, mutation } from '../utils/reduxToolkitEndpointAbstractions';
 
 const apiWithTag = api.enhanceEndpoints({
-  addTagTypes: [
-    'KeyringStatus',
-    'ServiceRunning',
-    'DaemonKey',
-    'RunningServices',
-  ],
+  addTagTypes: ['KeyringStatus', 'ServiceRunning', 'DaemonKey', 'RunningServices'],
 });
 
 export const daemonApi = apiWithTag.injectEndpoints({
   endpoints: (build) => ({
-    getKey: build.query<
-      KeyData,
-      {
-        fingerprint: number;
-        includeSecrets?: boolean;
-      }
-    >({
-      query: ({ fingerprint, includeSecrets }) => ({
-        command: 'getKey',
-        service: Daemon,
-        args: [fingerprint, includeSecrets],
-      }),
-      transformResponse: (response: any) => response?.key,
-      providesTags: (key) =>
-        key ? [{ type: 'DaemonKey', id: key.fingerprint }] : [],
+    addPrivateKey: mutation(build, Daemon, 'addPrivateKey', {
+      transformResponse: (response) => response.fingerprint,
+      invalidatesTags: [{ type: 'DaemonKey', id: 'LIST' }],
     }),
 
-    getKeys: build.query<
-      KeyData[],
-      {
-        includeSecrets?: boolean;
-      }
-    >({
-      query: ({ includeSecrets } = {}) => ({
-        command: 'getKeys',
-        service: Daemon,
-        args: [includeSecrets],
-      }),
-      transformResponse: (response: any) => response?.keys,
+    getKey: query(build, Daemon, 'getKey', {
+      transformResponse: (response) => response.key,
+      providesTags: (key) => (key ? [{ type: 'DaemonKey', id: key.fingerprint }] : []),
+    }),
+
+    getKeys: query(build, Daemon, 'getKeys', {
+      transformResponse: (response) => response.keys,
       providesTags: (keys) =>
         keys
           ? [
-              ...keys.map(
-                (key) => ({ type: 'DaemonKey', id: key.fingerprint } as const)
-              ),
+              ...keys.map((key) => ({ type: 'DaemonKey', id: key.fingerprint } as const)),
               { type: 'DaemonKey', id: 'LIST' },
             ]
           : [{ type: 'DaemonKey', id: 'LIST' }],
     }),
 
-    setLabel: build.mutation<
-      boolean,
-      {
-        fingerprint: number;
-        label: string;
-      }
-    >({
-      query: ({ fingerprint, label }) => ({
-        command: 'setLabel',
-        service: Daemon,
-        args: [fingerprint, label],
-      }),
+    setLabel: mutation(build, Daemon, 'setLabel', {
       invalidatesTags: () => ['DaemonKey'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    deleteLabel: build.mutation<
-      boolean,
-      {
-        fingerprint: number;
-      }
-    >({
-      query: ({ fingerprint }) => ({
-        command: 'deleteLabel',
-        service: Daemon,
-        args: [fingerprint],
-      }),
+    deleteLabel: mutation(build, Daemon, 'deleteLabel', {
       invalidatesTags: () => ['DaemonKey'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    daemonPing: build.query<boolean, {}>({
-      query: () => ({
-        command: 'ping',
-        service: Daemon,
-      }),
-      transformResponse: (response: any) => response?.success,
-    }),
+    daemonPing: query(build, Daemon, 'ping'),
 
-    getKeyringStatus: build.query<KeyringStatus, {}>({
-      query: () => ({
-        command: 'keyringStatus',
-        service: Daemon,
-      }),
-      transformResponse: (response: any) => {
-        const { status, ...rest } = response;
-
-        return {
-          ...rest,
-        };
-      },
+    getKeyringStatus: query(build, Daemon, 'keyringStatus', {
       providesTags: ['KeyringStatus'],
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onKeyringStatusChanged',
           service: Daemon,
@@ -123,151 +61,38 @@ export const daemonApi = apiWithTag.injectEndpoints({
       ]),
     }),
 
-    startService: build.mutation<
-      boolean,
-      {
-        service: ServiceName;
-        testing?: boolean;
-      }
-    >({
-      query: ({ service, testing }) => ({
-        command: 'startService',
-        service: Daemon,
-        args: [service, testing],
-      }),
+    startService: mutation(build, Daemon, 'startService'),
+
+    stopService: mutation(build, Daemon, 'stopService'),
+
+    isServiceRunning: query(build, Daemon, 'isRunning', {
+      transformResponse: (response) => response.isRunning,
+      providesTags: (_result, _err, { service }) => [{ type: 'ServiceRunning', id: service }],
     }),
 
-    stopService: build.mutation<
-      boolean,
-      {
-        service: ServiceName;
-      }
-    >({
-      query: ({ service }) => ({
-        command: 'stopService',
-        service: Daemon,
-        args: [service],
-      }),
-    }),
-
-    isServiceRunning: build.query<
-      KeyringStatus,
-      {
-        service: ServiceName;
-      }
-    >({
-      query: ({ service }) => ({
-        command: 'isRunning',
-        service: Daemon,
-        args: [service],
-      }),
-      transformResponse: (response: any) => response?.isRunning,
-      providesTags: (_result, _err, { service }) => [
-        { type: 'ServiceRunning', id: service },
-      ],
-    }),
-
-    runningServices: build.query<KeyringStatus, {}>({
-      query: () => ({
-        command: 'runningServices',
-        service: Daemon,
-      }),
-      transformResponse: (response: any) => response?.runningServices,
+    runningServices: query(build, Daemon, 'runningServices', {
+      transformResponse: (response) => response.runningServices,
       providesTags: [{ type: 'RunningServices', id: 'LIST' }],
     }),
 
-    setKeyringPassphrase: build.mutation<
-      boolean,
-      {
-        currentPassphrase?: string;
-        newPassphrase?: string;
-        passphraseHint?: string;
-        savePassphrase?: boolean;
-      }
-    >({
-      query: ({
-        currentPassphrase,
-        newPassphrase,
-        passphraseHint,
-        savePassphrase,
-      }) => ({
-        command: 'setKeyringPassphrase',
-        service: Daemon,
-        args: [
-          currentPassphrase,
-          newPassphrase,
-          passphraseHint,
-          savePassphrase,
-        ],
-      }),
+    setKeyringPassphrase: mutation(build, Daemon, 'setKeyringPassphrase', {
       invalidatesTags: () => ['KeyringStatus'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    removeKeyringPassphrase: build.mutation<
-      boolean,
-      {
-        currentPassphrase: string;
-      }
-    >({
-      query: ({ currentPassphrase }) => ({
-        command: 'removeKeyringPassphrase',
-        service: Daemon,
-        args: [currentPassphrase],
-      }),
+    removeKeyringPassphrase: mutation(build, Daemon, 'removeKeyringPassphrase', {
       invalidatesTags: () => ['KeyringStatus'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    migrateKeyring: build.mutation<
-      boolean,
-      {
-        passphrase: string;
-        passphraseHint: string;
-        savePassphrase: boolean;
-        cleanupLegacyKeyring: boolean;
-      }
-    >({
-      query: ({
-        passphrase,
-        passphraseHint,
-        savePassphrase,
-        cleanupLegacyKeyring,
-      }) => ({
-        command: 'migrateKeyring',
-        service: Daemon,
-        args: [
-          passphrase,
-          passphraseHint,
-          savePassphrase,
-          cleanupLegacyKeyring,
-        ],
-      }),
+    migrateKeyring: mutation(build, Daemon, 'migrateKeyring', {
       invalidatesTags: () => ['KeyringStatus'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    unlockKeyring: build.mutation<
-      boolean,
-      {
-        key: string;
-      }
-    >({
-      query: ({ key }) => ({
-        command: 'unlockKeyring',
-        service: Daemon,
-        args: [key],
-      }),
+    unlockKeyring: mutation(build, Daemon, 'unlockKeyring', {
       invalidatesTags: () => ['KeyringStatus'],
-      transformResponse: (response: any) => response?.success,
     }),
 
-    getPlotters: build.query<Object, undefined>({
-      query: () => ({
-        command: 'getPlotters',
-        service: Daemon,
-      }),
-      transformResponse: (response: any) => {
+    getPlotters: query(build, Daemon, 'getPlotters', {
+      transformResponse: (response) => {
         const { plotters } = response;
         const plotterNames = Object.keys(plotters) as PlotterName[];
         const availablePlotters: PlotterMap<PlotterName, Plotter> = {};
@@ -279,118 +104,78 @@ export const daemonApi = apiWithTag.injectEndpoints({
             installed,
             canInstall,
             bladebitMemoryWarning,
-          } = plotters[plotterName];
+          } = plotters[plotterName] as PlotterApi;
 
-          availablePlotters[plotterName] = {
-            displayName,
-            version,
-            options: optionsForPlotter(plotterName),
-            defaults: defaultsForPlotter(plotterName),
-            installInfo: {
-              installed,
-              canInstall,
-              bladebitMemoryWarning,
-            },
-          };
+          if (!plotterName.startsWith('bladebit')) {
+            availablePlotters[plotterName] = {
+              displayName,
+              version,
+              options: optionsForPlotter(plotterName),
+              defaults: defaultsForPlotter(plotterName),
+              installInfo: {
+                installed,
+                canInstall,
+                bladebitMemoryWarning,
+              },
+            };
+            return;
+          }
+
+          // if (plotterName.startsWith('bladebit'))
+          const majorVersion = typeof version === 'string' ? +version.split('.')[0] : 0;
+          if (majorVersion > 1) {
+            const bbDisk = PlotterName.BLADEBIT_DISK;
+            availablePlotters[bbDisk] = {
+              displayName,
+              version: `${version} (Disk plot)`,
+              options: optionsForPlotter(bbDisk),
+              defaults: defaultsForPlotter(bbDisk),
+              installInfo: {
+                installed,
+                canInstall,
+                bladebitMemoryWarning,
+              },
+            };
+
+            const bbRam = PlotterName.BLADEBIT_RAM;
+            availablePlotters[bbRam] = {
+              displayName,
+              version: `${version} (RAM plot)`,
+              options: optionsForPlotter(bbRam),
+              defaults: defaultsForPlotter(bbRam),
+              installInfo: {
+                installed,
+                canInstall,
+                bladebitMemoryWarning,
+              },
+            };
+          } else {
+            const bbRam = PlotterName.BLADEBIT_RAM;
+            availablePlotters[bbRam] = {
+              displayName,
+              version: `${version} (RAM plot)`,
+              options: optionsForPlotter(bbRam),
+              defaults: defaultsForPlotter(bbRam),
+              installInfo: {
+                installed: false,
+                canInstall: false,
+                bladebitMemoryWarning,
+              },
+            };
+          }
         });
 
         return availablePlotters;
       },
-      // providesTags: (_result, _err, { service }) => [{ type: 'ServiceRunning', id: service }],
     }),
 
-    stopPlotting: build.mutation<
-      boolean,
-      {
-        id: string;
-      }
-    >({
-      query: ({ id }) => ({
-        command: 'stopPlotting',
-        service: Daemon,
-        args: [id],
-      }),
-      transformResponse: (response: any) => response?.success,
-      // providesTags: (_result, _err, { service }) => [{ type: 'ServiceRunning', id: service }],
-    }),
-    startPlotting: build.mutation<boolean, PlotAdd>({
-      query: ({
-        bladebitDisableNUMA,
-        bladebitWarmStart,
-        bladebitNoCpuAffinity,
-        bladebit2Cache,
-        bladebit2F1Threads,
-        bladebit2FpThreads,
-        bladebit2CThreads,
-        bladebit2P2Threads,
-        bladebit2P3Threads,
-        bladebit2Alternate,
-        bladebit2NoT1Direct,
-        bladebit2NoT2Direct,
-        c,
-        delay,
-        disableBitfieldPlotting,
-        excludeFinalDir,
-        farmerPublicKey,
-        finalLocation,
-        fingerprint,
-        madmaxNumBucketsPhase3,
-        madmaxTempToggle,
-        madmaxThreadMultiplier,
-        maxRam,
-        numBuckets,
-        numThreads,
-        overrideK,
-        parallel,
-        plotCount,
-        plotSize,
-        plotterName,
-        poolPublicKey,
-        queue,
-        workspaceLocation,
-        workspaceLocation2,
-      }) => ({
-        command: 'startPlotting',
-        service: Daemon,
-        args: [
-          plotterName,
-          plotSize,
-          plotCount,
-          workspaceLocation,
-          workspaceLocation2 || workspaceLocation,
-          finalLocation,
-          maxRam,
-          numBuckets,
-          numThreads,
-          queue,
-          fingerprint,
-          parallel,
-          delay,
-          disableBitfieldPlotting,
-          excludeFinalDir,
-          overrideK,
-          farmerPublicKey,
-          poolPublicKey,
-          c,
-          bladebitDisableNUMA,
-          bladebitWarmStart,
-          madmaxNumBucketsPhase3,
-          madmaxTempToggle,
-          madmaxThreadMultiplier,
-          bladebitNoCpuAffinity,
-          bladebit2Cache,
-          bladebit2F1Threads,
-          bladebit2FpThreads,
-          bladebit2CThreads,
-          bladebit2P2Threads,
-          bladebit2P3Threads,
-          bladebit2Alternate,
-          bladebit2NoT1Direct,
-          bladebit2NoT2Direct,
-        ],
-      }),
-      transformResponse: (response: any) => response?.success,
-      // providesTags: (_result, _err, { service }) => [{ type: 'ServiceRunning', id: service }],
+    stopPlotting: mutation(build, Daemon, 'stopPlotting'),
+
+    startPlotting: mutation(build, Daemon, 'startPlotting'),
+
+    getVersion: query(build, Daemon, 'getVersion', {
+      transformResponse: (response) => response.version,
+      providesTags: [{ type: 'RunningServices', id: 'LIST' }],
     }),
   }),
 });
@@ -406,11 +191,13 @@ export const {
   useRemoveKeyringPassphraseMutation,
   useMigrateKeyringMutation,
   useUnlockKeyringMutation,
+  useGetVersionQuery,
 
   useGetPlottersQuery,
   useStopPlottingMutation,
   useStartPlottingMutation,
 
+  useAddPrivateKeyMutation,
   useGetKeyQuery,
   useGetKeysQuery,
   useSetLabelMutation,

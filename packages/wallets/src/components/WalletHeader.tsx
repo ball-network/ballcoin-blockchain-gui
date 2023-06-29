@@ -1,16 +1,11 @@
-import React, { type ReactNode } from 'react';
-import { Trans } from '@lingui/macro';
-import {
-  Flex,
-  ConfirmDialog,
-  useOpenDialog,
-  DropdownActions,
-  MenuItem,
-} from '@ball-network/core';
-import { Typography, ListItemIcon, Tab, Tabs } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useDeleteUnconfirmedTransactionsMutation } from '@ball-network/api-react';
+import { Flex, ConfirmDialog, useOpenDialog, DropdownActions, MenuItem } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Delete as DeleteIcon } from '@mui/icons-material';
+import { Typography, ListItemIcon, Tab, Tabs } from '@mui/material';
+import React, { type ReactNode } from 'react';
 import { WalletType } from '@ball-network/api';
+
 import WalletName from './WalletName';
 import useWallet from "../hooks/useWallet";
 
@@ -25,8 +20,7 @@ export default function WalletHeader(props: StandardWalletProps) {
   const { walletId, actions, tab, onTabChange } = props;
   const { wallet } = useWallet(walletId);
   const openDialog = useOpenDialog();
-  const [deleteUnconfirmedTransactions] =
-    useDeleteUnconfirmedTransactionsMutation();
+  const [deleteUnconfirmedTransactions] = useDeleteUnconfirmedTransactionsMutation();
 
   async function handleDeleteUnconfirmedTransactions() {
     await openDialog(
@@ -52,21 +46,9 @@ export default function WalletHeader(props: StandardWalletProps) {
             textColor="primary"
             indicatorColor="primary"
           >
-            <Tab
-              value="summary"
-              label={<Trans>Summary</Trans>}
-              data-testid="WalletHeader-tab-summary"
-            />
-            <Tab
-              value="send"
-              label={<Trans>Send</Trans>}
-              data-testid="WalletHeader-tab-send"
-            />
-            <Tab
-              value="receive"
-              label={<Trans>Receive</Trans>}
-              data-testid="WalletHeader-tab-receive"
-            />
+            <Tab value="summary" label={<Trans>Summary</Trans>} data-testid="WalletHeader-tab-summary" />
+            <Tab value="send" label={<Trans>Send</Trans>} data-testid="WalletHeader-tab-send" />
+            <Tab value="receive" label={<Trans>Receive</Trans>} data-testid="WalletHeader-tab-receive" />
             {(wallet && wallet.type === WalletType.STANDARD_WALLET) && (
               <Tab
                 value="staking"

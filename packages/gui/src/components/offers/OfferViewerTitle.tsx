@@ -1,10 +1,11 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import moment from 'moment';
+import path from 'path';
+
 import { OfferTradeRecord } from '@ball-network/api';
 import { Flex, useColorModeValue } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
 import { Typography } from '@mui/material';
-import path from 'path';
+import moment from 'moment';
+import React from 'react';
 import styled from 'styled-components';
 
 const StyledHeaderBox = styled.div`
@@ -22,23 +23,17 @@ type OfferViewerTitleProps = {
   tradeRecord?: OfferTradeRecord;
 };
 
-export default function OfferViewerTitle(
-  props: OfferViewerTitleProps,
-): React.ReactElement {
+export default function OfferViewerTitle(props: OfferViewerTitleProps): React.ReactElement {
   const { offerFilePath, tradeRecord } = props;
-  const offerFileName = offerFilePath
-    ? path.basename(offerFilePath)
-    : undefined;
+  const offerFileName = offerFilePath ? path.basename(offerFilePath) : undefined;
 
+  // eslint-disable-next-line react/no-unstable-nested-components -- Not a perf issue
   function OfferTitleValue() {
     if (offerFileName) {
       return offerFileName;
-    } else if (tradeRecord) {
-      return (
-        <Trans>
-          created {moment(tradeRecord.createdAtTime * 1000).format('LLL')}
-        </Trans>
-      );
+    }
+    if (tradeRecord) {
+      return <Trans>created {moment(tradeRecord.createdAtTime * 1000).format('LLL')}</Trans>;
     }
 
     return null;

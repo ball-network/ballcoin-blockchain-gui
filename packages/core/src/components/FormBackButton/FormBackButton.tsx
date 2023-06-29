@@ -1,7 +1,8 @@
-import React, { ReactNode } from 'react';
 import { Trans } from '@lingui/macro';
-import { useNavigate } from 'react-router';
+import React, { ReactNode } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useNavigate } from 'react-router';
+
 import useOpenDialog from '../../hooks/useOpenDialog';
 import Button from '../Button';
 import ConfirmDialog from '../ConfirmDialog';
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export default function FormBackButton(props: Props) {
-  const { children, ...rest } = props;
+  const { children = <Trans>Back</Trans>, ...rest } = props;
   const openDialog = useOpenDialog();
   const { formState } = useFormContext();
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function FormBackButton(props: Props) {
           confirmColor="danger"
         >
           <Trans>You have made changes. Do you want to discard them?</Trans>
-        </ConfirmDialog>,
+        </ConfirmDialog>
       ));
 
     if (canGoBack) {
@@ -42,7 +43,3 @@ export default function FormBackButton(props: Props) {
     </Button>
   );
 }
-
-FormBackButton.defaultProps = {
-  children: <Trans>Back</Trans>,
-};

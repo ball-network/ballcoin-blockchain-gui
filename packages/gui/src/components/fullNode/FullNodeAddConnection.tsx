@@ -1,9 +1,9 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { Button, DialogActions, Flex, Form, TextField } from '@ball-network/core';
 import { useOpenFullNodeConnectionMutation } from '@ball-network/api-react';
-import { useForm } from 'react-hook-form';
+import { Button, ButtonLoading, DialogActions, Flex, Form, TextField, useShowError } from '@ball-network/core';
+import { Trans, t } from '@lingui/macro';
 import { Alert, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 
 type Props = {
   open: boolean;
@@ -17,7 +17,10 @@ type FormData = {
 
 export default function FullNodeAddConnection(props: Props) {
   const { onClose, open } = props;
-  const [openConnection, { error }] = useOpenFullNodeConnectionMutation();
+  const [openConnection] = useOpenFullNodeConnectionMutation();
+  const [error, setError] = React.useState<Error | undefined>(undefined);
+  const [loading, setLoading] = React.useState(false);
+  const showError = useShowError();
 
   const methods = useForm<FormData>({
     defaultValues: {
@@ -35,12 +38,28 @@ export default function FullNodeAddConnection(props: Props) {
   async function handleSubmit(values: FormData) {
     const { host, port } = values;
 
-    await openConnection({
-      host,
-      port: Number.parseInt(port, 10),
-    }).unwrap();
+    setLoading(true);
+    setError(undefined);
 
-    handleClose();
+    try {
+      await openConnection({
+        host,
+        port: Number.parseInt(port, 10),
+      }).unwrap();
+
+      handleClose();
+    } catch (e: any) {
+      console.error(e);
+      let updatedError = e;
+      if (e.message.startsWith('could not connect to')) {
+        updatedError = new Error(t`Could not connect to host ${host} on port ${port}`);
+      }
+
+      setError(updatedError);
+      showError(updatedError);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleHide() {
@@ -70,29 +89,21 @@ export default function FullNodeAddConnection(props: Props) {
               label={<Trans>IP address / host</Trans>}
               name="host"
               variant="filled"
+              disabled={loading}
+              autoFocus
             />
-            <TextField
-              label={<Trans>Port</Trans>}
-              name="port"
-              type="number"
-              variant="filled"
-            />
+            <TextField label={<Trans>Port</Trans>} name="port" type="number" variant="filled" disabled={loading} />
           </Flex>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleHide} variant="outlined" color="secondary">
             <Trans>Cancel</Trans>
           </Button>
-          <Button variant="contained" color="primary" type="submit">
+          <ButtonLoading loading={loading} variant="contained" color="primary" type="submit">
             <Trans>Connect</Trans>
-          </Button>
+          </ButtonLoading>
         </DialogActions>
       </Form>
     </Dialog>
   );
 }
-
-FullNodeAddConnection.defaultProps = {
-  open: false,
-  onClose: () => {},
-};

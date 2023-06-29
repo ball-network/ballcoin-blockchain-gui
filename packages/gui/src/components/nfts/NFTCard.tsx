@@ -1,104 +1,97 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardActionArea, CardContent, Typography } from '@mui/material';
-import { IconButton, Flex, Loading } from '@ball-network/core';
+import { IconButton, Flex } from '@ball-network/core';
 import { MoreVert } from '@mui/icons-material';
-import styled from 'styled-components';
+import { Card, CardActionArea, CardContent, Checkbox, Typography } from '@mui/material';
+import React, { useMemo, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import useHiddenNFTs from '../../hooks/useHiddenNFTs';
+import useNFT from '../../hooks/useNFT';
+import getNFTId from '../../util/getNFTId';
+import NFTContextualActions, { NFTContextualActionTypes } from './NFTContextualActions';
 import NFTPreview from './NFTPreview';
-import { type NFTInfo } from '@ball-network/api';
-import NFTContextualActions, {
-  NFTContextualActionTypes,
-} from './NFTContextualActions';
-import useNFTMetadata from '../../hooks/useNFTMetadata';
-
-const StyledCardContent = styled(CardContent)`
-  //padding-top: ${({ theme }) => theme.spacing(1)};
-  // padding-bottom: ${({ theme }) => theme.spacing(1)} !important;
-`;
-
-const StyledLoadingCardContent = styled(CardContent)`
-  min-height: 362px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+import NFTTitle from './NFTTitle';
 
 export type NFTCardProps = {
-  nft: NFTInfo;
-  onSelect?: (selected: boolean) => void;
-  selected?: boolean;
+  id: string;
   canExpandDetails: boolean;
   availableActions: NFTContextualActionTypes;
   isOffer: boolean;
+  onSelect?: (nftId: string) => Promise<boolean>;
+  search?: string;
+  selected?: boolean;
 };
 
-export default function NFTCard(props: NFTCardProps) {
+function NFTCard(props: NFTCardProps) {
   const {
-    nft,
+    id,
     canExpandDetails = true,
     availableActions = NFTContextualActionTypes.None,
     isOffer,
+    onSelect,
+    search,
+    selected = false,
   } = props;
 
+  const nftId = useMemo(() => getNFTId(id), [id]);
+
+  const [isNFTHidden] = useHiddenNFTs();
   const navigate = useNavigate();
 
-  const { metadata, isLoading, error } = useNFTMetadata([nft]);
+  const { nft, isLoading } = useNFT(nftId);
+  const isHidden = useMemo(() => isNFTHidden(nftId), [nftId, isNFTHidden]);
 
-  function handleClick() {
+  async function handleClick() {
+    if (onSelect) {
+      const canContinue = await onSelect(nftId);
+      if (!canContinue) {
+        return;
+      }
+    }
+
     if (canExpandDetails) {
-      navigate(`/dashboard/nfts/${nft.$nftId}`);
+      navigate(`/dashboard/nfts/${nftId}`);
     }
   }
 
   return (
-    <Flex flexDirection="column" flexGrow={1}>
-      <Card sx={{ borderRadius: '8px' }} variant="outlined">
-        {isLoading ? (
-          <StyledLoadingCardContent>
-            <Loading center />
-          </StyledLoadingCardContent>
-        ) : (
-          <>
-            <CardActionArea onClick={handleClick}>
-              <NFTPreview
-                nft={nft}
-                fit="cover"
-                isPreview
-                metadata={metadata}
-                isLoadingMetadata={isLoading}
-                disableThumbnail={isOffer}
-                metadataError={error}
-              />
-            </CardActionArea>
-            <CardActionArea
-              onClick={() => canExpandDetails && handleClick()}
-              component="div"
-            >
-              <StyledCardContent>
-                <Flex justifyContent="space-between" alignItems="center">
-                  <Flex gap={1} alignItems="center" minWidth={0}>
-                    <Typography noWrap>
-                      {metadata?.name ?? <Trans>Title Not Available</Trans>}
-                    </Typography>
-                  </Flex>
-                  {availableActions !== NFTContextualActionTypes.None && (
-                    <NFTContextualActions
-                      selection={{ items: [nft] }}
-                      availableActions={availableActions}
-                      toggle={
-                        <IconButton>
-                          <MoreVert />
-                        </IconButton>
-                      }
-                    />
-                  )}
-                </Flex>
-              </StyledCardContent>
-            </CardActionArea>
-          </>
-        )}
+    <Flex flexDirection="column" flexGrow={1} minWidth={0}>
+      <Card sx={{ borderRadius: '8px', opacity: isHidden ? 0.5 : 1 }} variant="outlined">
+        <CardActionArea onClick={handleClick}>
+          {onSelect && (
+            <Checkbox
+              onClick={() => handleClick()}
+              checked={selected}
+              size="small"
+              sx={{ zIndex: 1, position: 'absolute', right: 2, top: 2 }}
+            />
+          )}
+          <NFTPreview id={nftId} disableInteractions={isOffer} preview />
+        </CardActionArea>
+        <CardActionArea onClick={() => canExpandDetails && handleClick()} component="div">
+          <CardContent>
+            <Flex justifyContent="space-between" alignItems="center">
+              <Flex gap={1} alignItems="center" minWidth={0} flexBasis={0} flexGrow={1}>
+                <Typography noWrap>
+                  <NFTTitle nftId={nftId} highlight={search} />
+                </Typography>
+              </Flex>
+              {!isLoading && availableActions !== NFTContextualActionTypes.None && (
+                <NFTContextualActions
+                  selection={{ items: [nft] }}
+                  availableActions={availableActions}
+                  toggle={
+                    <IconButton>
+                      <MoreVert />
+                    </IconButton>
+                  }
+                />
+              )}
+            </Flex>
+          </CardContent>
+        </CardActionArea>
       </Card>
     </Flex>
   );
 }
+
+export default memo(NFTCard);

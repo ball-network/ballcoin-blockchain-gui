@@ -1,4 +1,5 @@
 import { useGetBlockchainStateQuery } from '@ball-network/api-react';
+
 import FullNodeState from '../constants/FullNodeState';
 
 export default function useFullNodeState(): {
@@ -13,8 +14,8 @@ export default function useFullNodeState(): {
   } = useGetBlockchainStateQuery(
     {},
     {
-      pollingInterval: 10000,
-    },
+      pollingInterval: 10_000,
+    }
   );
   const blockchainSynced = blockchainState?.sync?.synced;
   const blockchainSynching = blockchainState?.sync?.syncMode;

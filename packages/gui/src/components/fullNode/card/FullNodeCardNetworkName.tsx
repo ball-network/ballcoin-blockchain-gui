@@ -1,7 +1,7 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
 import { useGetNetworkInfoQuery } from '@ball-network/api-react';
 import { CardSimple } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import React from 'react';
 
 export default function FullNodeCardNetworkName() {
   const { data: networkInfo, isLoading, error } = useGetNetworkInfoQuery();

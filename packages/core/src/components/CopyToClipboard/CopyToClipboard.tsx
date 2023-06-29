@@ -1,29 +1,16 @@
-import React, { useState } from 'react';
+import { Copy as AssignmentIcon } from '@ball-network/icons';
 import { Trans } from '@lingui/macro';
-import { useCopyToClipboard } from 'react-use';
 import { Tooltip, IconButton } from '@mui/material';
-import { Assignment as AssignmentIcon } from '@mui/icons-material';
-// @ts-ignore
+import React, { useState } from 'react';
+import { useCopyToClipboard } from 'react-use';
 import { useTimeout } from 'react-use-timeout';
-import { styled } from '@mui/system';
-
-const StyledAssignmentIcon = styled(({ invertColor, ...rest }) => (
-  <AssignmentIcon {...rest} />
-))(
-  ({ theme, invertColor }) => `
-  color: ${
-    invertColor ? theme.palette.common.white : theme.palette.text.secondary
-  };
-`
-);
 
 export type CopyToClipboardProps = {
   value: string;
   fontSize?: 'medium' | 'small' | 'large' | 'inherit';
-  size: 'small' | 'medium';
-  clearCopiedDelay: number;
+  size?: 'small' | 'medium';
+  clearCopiedDelay?: number;
   invertColor?: boolean;
-  color?: string;
   'data-testid'?: string;
 };
 
@@ -43,7 +30,7 @@ export default function CopyToClipboard(props: CopyToClipboardProps) {
     setCopied(false);
   }, clearCopiedDelay);
 
-  function handleCopy(event) {
+  function handleCopy(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -52,18 +39,14 @@ export default function CopyToClipboard(props: CopyToClipboardProps) {
     timeout.start();
   }
 
-  const tooltipTitle = copied ? (
-    <Trans>Copied</Trans>
-  ) : (
-    <Trans>Copy to Clipboard</Trans>
-  );
+  const tooltipTitle = copied ? <Trans>Copied</Trans> : <Trans>Copy to Clipboard</Trans>;
 
   return (
     <Tooltip title={tooltipTitle}>
       <IconButton onClick={handleCopy} size={size} data-testid={dataTestid}>
-        <StyledAssignmentIcon
+        <AssignmentIcon
           fontSize={fontSize}
-          invertColor={invertColor}
+          sx={{ color: (theme) => (invertColor ? theme.palette.common.white : theme.palette.text.secondary) }}
           {...rest}
         />
       </IconButton>

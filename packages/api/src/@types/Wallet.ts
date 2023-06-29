@@ -1,8 +1,8 @@
+import WalletType from '../constants/WalletType';
 import type Transaction from './Transaction';
-import type WalletType from '../constants/WalletType';
 import WalletBalance from './WalletBalance';
 
-interface Wallet {
+type Wallet = {
   id: number;
   name: string;
   type: WalletType;
@@ -19,6 +19,8 @@ interface Wallet {
   sending_transaction: boolean;
   send_transaction_result?: string | null;
   wallet_balance?: WalletBalance;
-}
+};
+
+export type WalletListItem = Pick<Wallet, 'id' | 'name' | 'type' | 'data'>;
 
 export default Wallet;

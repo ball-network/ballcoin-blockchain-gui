@@ -1,22 +1,24 @@
-import { useCallback } from 'react';
 import type { NFTInfo } from '@ball-network/api';
 import { useHiddenList } from '@ball-network/core';
+import { useCallback } from 'react';
 
 export default function useHiddenNFTs() {
-  const [isNFTHidden, setIsNFTHidden, hiddenNFTs] =
-    useHiddenList<NFTInfo['$nftId']>('nfts');
+  const [isNFTHidden, setIsNFTHidden, hiddenNFTs, setIsNFTMultipleHidden] = useHiddenList<NFTInfo['$nftId']>('nfts');
 
   const handleSetIsHidden = useCallback(
-    (nft: NFTInfo, isHidden: boolean) => {
-      setIsNFTHidden(nft.$nftId, isHidden);
+    (nftId: string, isHidden: boolean) => {
+      setIsNFTHidden(nftId, isHidden);
     },
-    [setIsNFTHidden],
+    [setIsNFTHidden]
   );
 
-  const handleIsNFTHidden = useCallback(
-    (nft: NFTInfo) => isNFTHidden(nft?.$nftId),
-    [isNFTHidden],
+  const handleIsNFTHidden = useCallback((nftId: string) => isNFTHidden(nftId), [isNFTHidden]);
+  const setHiddenMultiple = useCallback(
+    (nftIds: string[], hide: boolean) => {
+      setIsNFTMultipleHidden(nftIds, hide);
+    },
+    [setIsNFTMultipleHidden]
   );
 
-  return [handleIsNFTHidden, handleSetIsHidden, hiddenNFTs];
+  return [handleIsNFTHidden, handleSetIsHidden, hiddenNFTs, setHiddenMultiple];
 }

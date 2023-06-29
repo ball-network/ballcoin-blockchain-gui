@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { useGetTransactionsQuery, useGetTransactionsCountQuery } from '@ball-network/api-react';
 import type { Transaction } from '@ball-network/api';
+import { useGetTransactionsQuery, useGetTransactionsCountQuery } from '@ball-network/api-react';
+import { useState } from 'react';
 
 export default function useWalletTransactions(
   walletId: number,
   defaultRowsPerPage = 10,
   defaultPage = 0,
   sortKey?: 'CONFIRMED_AT_HEIGHT' | 'RELEVANCE',
-  reverse?: boolean,
+  reverse?: boolean
 ): {
   isLoading: boolean;
   transactions?: Transaction[];
@@ -20,29 +20,36 @@ export default function useWalletTransactions(
   const [rowsPerPage, setRowsPerPage] = useState<number>(defaultRowsPerPage);
   const [page, setPage] = useState<number>(defaultPage);
 
-  const { data: count, isLoading: isTransactionsCountLoading, error: transactionsCountError } = useGetTransactionsCountQuery({
+  const {
+    data: count,
+    isLoading: isTransactionsCountLoading,
+    error: transactionsCountError,
+  } = useGetTransactionsCountQuery({
     walletId,
   });
 
   const all = rowsPerPage === -1;
 
-  const start = all
-    ? 0
-    : page * rowsPerPage;
+  const start = all ? 0 : page * rowsPerPage;
 
-  const end = all
-    ? count ?? 0
-    : start + rowsPerPage;
+  const end = all ? count ?? 0 : start + rowsPerPage;
 
-  const { data: transactions, isLoading: isTransactionsLoading, error: transactionsError } = useGetTransactionsQuery({
-    walletId,
-    start,
-    end,
-    sortKey,
-    reverse,
-  }, {
-    skipToken: count === undefined,
-  });
+  const {
+    data: transactions,
+    isLoading: isTransactionsLoading,
+    error: transactionsError,
+  } = useGetTransactionsQuery(
+    {
+      walletId,
+      start,
+      end,
+      sortKey,
+      reverse,
+    },
+    {
+      skipToken: count === undefined,
+    }
+  );
 
   const isLoading = isTransactionsLoading || isTransactionsCountLoading;
   const error = transactionsError || transactionsCountError;
@@ -50,9 +57,9 @@ export default function useWalletTransactions(
   // TODO move sorting to the backend
   const transactionsOrdered = transactions;
 
-  function handlePageChange(rowsPerPage: number, page: number) {
-    setRowsPerPage(rowsPerPage);
-    setPage(page);
+  function handlePageChange(rowsPerPageLocal: number, pageLocal: number) {
+    setRowsPerPage(rowsPerPageLocal);
+    setPage(pageLocal);
   }
 
   return {

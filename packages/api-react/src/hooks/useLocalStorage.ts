@@ -1,51 +1,66 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+
 import EventEmitter from '../utils/EventEmitter';
+import { isEqual } from './usePrefs';
 
 const eventEmitter = new EventEmitter();
 
-function getValueFromLocalStorage<T>(
-  key: string,
-  defaultValue?: T
-): T | undefined {
+type EventEmitterValue = { key: any; newValue: any };
+
+function getValueFromLocalStorage<T>(key: string): T | undefined {
   const item = window.localStorage.getItem(key);
 
   if (item === undefined || item === null) {
-    return defaultValue;
+    return undefined;
   }
 
   try {
     return JSON.parse(item);
   } catch (error) {
-    return defaultValue;
+    return undefined;
   }
 }
 
-export default function useLocalStorage<T>(
+export default function useLocalStorage<T extends keyof (string | undefined)>(
   key: string,
-  initialValue?: T
+  defaultValue?: T
 ): [T | undefined, (value: T | ((value: T | undefined) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T | undefined>(
-    getValueFromLocalStorage(key, initialValue)
+  const [storedValue, setStoredValue] = useState<T | undefined>(getValueFromLocalStorage(key));
+  const defaultValueRef = useRef(defaultValue);
+
+  if (!isEqual(defaultValueRef.current, defaultValue)) {
+    defaultValueRef.current = defaultValue;
+  }
+
+  const setValue = useCallback(
+    (value: T | ((nv: T | undefined) => T)) => {
+      setStoredValue((currentStoredValue) => {
+        const currentValue = currentStoredValue ?? defaultValueRef.current;
+        const newValue = value instanceof Function ? value(currentValue) : value;
+
+        const newStoredValue = JSON.stringify(newValue);
+        const oldStoredValue = JSON.stringify(currentValue);
+        if (newStoredValue === oldStoredValue) {
+          return currentStoredValue;
+        }
+
+        if (newStoredValue === JSON.stringify(defaultValueRef.current)) {
+          window.localStorage.removeItem(key);
+          eventEmitter.emit('storage', { key, newValue: undefined });
+          return undefined;
+        }
+
+        window.localStorage.setItem(key, newStoredValue);
+        eventEmitter.emit('storage', { key, newValue } as EventEmitterValue);
+
+        return newValue;
+      });
+    },
+    [key]
   );
 
-  const setValue = (value: T | ((value: T | undefined) => T)) => {
-    const newValue = value instanceof Function ? value(storedValue) : value;
-
-    const newStoredValue = JSON.stringify(newValue);
-    const oldStoredValue = JSON.stringify(storedValue);
-    if (newStoredValue === oldStoredValue) {
-      return;
-    }
-
-    setStoredValue(newValue);
-
-    window.localStorage.setItem(key, newStoredValue);
-
-    eventEmitter.emit('storage', { key, newValue });
-  };
-
   const changeHandler = useCallback(
-    (e) => {
+    (e: EventEmitterValue) => {
       const { key: changeKey, newValue } = e;
       if (key === changeKey) {
         setStoredValue(newValue);
@@ -62,5 +77,5 @@ export default function useLocalStorage<T>(
     };
   }, [changeHandler]);
 
-  return [storedValue, setValue];
+  return [storedValue ?? defaultValueRef.current, setValue];
 }

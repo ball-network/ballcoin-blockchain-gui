@@ -1,7 +1,9 @@
+import fs from 'fs';
+
 import { OfferTradeRecord } from '@ball-network/api';
 import { useGetOfferDataMutation } from '@ball-network/api-react';
 import { useShowSaveDialog } from '@ball-network/core';
-import fs from 'fs';
+
 import { suggestedFilenameForOffer } from '../components/offers/utils';
 import useAssetIdName from './useAssetIdName';
 
@@ -17,14 +19,11 @@ export default function useSaveOfferFile(): [SaveOfferFileHook] {
       data: response,
     }: {
       data: { offer: string; tradeRecord: OfferTradeRecord; success: boolean };
-    } = await getOfferData(tradeId);
+    } = await getOfferData({ offerId: tradeId });
     const { offer: offerData, tradeRecord, success } = response;
     if (success === true) {
       const dialogOptions = {
-        defaultPath: suggestedFilenameForOffer(
-          tradeRecord.summary,
-          lookupByAssetId,
-        ),
+        defaultPath: suggestedFilenameForOffer(tradeRecord.summary, lookupByAssetId),
       };
       const result = await showSaveDialog(dialogOptions);
       const { filePath, canceled } = result;

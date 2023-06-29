@@ -1,5 +1,4 @@
-import type BigNumber from 'bignumber.js';
-import { type WalletType } from '@ball-network/api';
+import { WalletType } from '@ball-network/api';
 
 type OfferRowData = {
   amount: string;

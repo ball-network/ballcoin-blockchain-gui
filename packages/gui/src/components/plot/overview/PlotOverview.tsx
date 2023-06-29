@@ -1,7 +1,8 @@
-import React from 'react';
-import { Loading, Flex } from '@ball-network/core';
 import { useGetThrottlePlotQueueQuery, useGetTotalHarvestersSummaryQuery } from '@ball-network/api-react';
+import { Loading, Flex } from '@ball-network/core';
 import { Grid } from '@mui/material';
+import React from 'react';
+
 import PlotHero from './PlotOverviewHero';
 import PlotOverviewPlots from './PlotOverviewPlots';
 

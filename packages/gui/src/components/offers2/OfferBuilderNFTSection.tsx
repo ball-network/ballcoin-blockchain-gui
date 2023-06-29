@@ -1,10 +1,11 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
-import { NFTs } from '@ball-network/icons';
 import { Flex } from '@ball-network/core';
+import { NFTs } from '@ball-network/icons';
+import { Trans } from '@lingui/macro';
+import React from 'react';
 import { useFieldArray } from 'react-hook-form';
-import OfferBuilderSection from './OfferBuilderSection';
+
 import OfferBuilderNFT from './OfferBuilderNFT';
+import OfferBuilderSection from './OfferBuilderSection';
 
 export type OfferBuilderNFTSectionProps = {
   name: string;
@@ -12,12 +13,11 @@ export type OfferBuilderNFTSectionProps = {
   muted?: boolean;
   viewer?: boolean;
   isMyOffer?: boolean;
+  max?: number;
 };
 
-export default function OfferBuilderNFTSection(
-  props: OfferBuilderNFTSectionProps,
-) {
-  const { name, offering, muted, viewer, isMyOffer = false } = props;
+export default function OfferBuilderNFTSection(props: OfferBuilderNFTSectionProps) {
+  const { name, offering, muted, viewer, isMyOffer = false, max = 10 } = props;
 
   const { fields, append, remove } = useFieldArray({
     name,
@@ -33,19 +33,17 @@ export default function OfferBuilderNFTSection(
     remove(index);
   }
 
-  const showProvenance = viewer
-    ? isMyOffer
-      ? offering
-      : !offering
-    : !offering;
-  const showRoyalties = viewer ? true : offering;
+  const showProvenance = viewer ? (isMyOffer ? offering : !offering) : !offering;
+  const showRoyalties = viewer ? (isMyOffer ? !offering : offering) : offering;
+
+  const canAdd = !!fields && (!max || fields.length < max);
 
   return (
     <OfferBuilderSection
       icon={<NFTs />}
       title={<Trans>NFT</Trans>}
       subtitle={<Trans>One-of-a-kind Collectible assets</Trans>}
-      onAdd={handleAdd}
+      onAdd={canAdd ? handleAdd : undefined}
       expanded={!!fields.length}
       muted={muted}
     >
@@ -57,7 +55,6 @@ export default function OfferBuilderNFTSection(
             provenance={showProvenance}
             showRoyalties={showRoyalties}
             onRemove={() => handleRemove(index)}
-            offering={offering}
           />
         ))}
       </Flex>

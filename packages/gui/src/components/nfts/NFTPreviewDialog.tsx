@@ -1,27 +1,28 @@
-import React from 'react';
 import { Flex } from '@ball-network/core';
-import { type NFTInfo } from '@ball-network/api';
 import { Dialog, Paper } from '@mui/material';
-import NFTPreview from './NFTPreview';
 import { styled } from '@mui/styles';
+import React from 'react';
+
+import NFTPreview from './NFTPreview';
 
 const StyledNFTPreviewBackground = styled(Paper)({
   padding: '2rem',
 });
 
-type NFTPreviewDialogProps = {
-  nft: NFTInfo;
+export type NFTPreviewDialogProps = {
+  id: string;
   open?: boolean;
   onClose?: () => void;
 };
 
 export default function NFTPreviewDialog(props: NFTPreviewDialogProps) {
-  const { nft, onClose = () => ({}), open = false, ...rest } = props;
+  const { id, onClose = () => ({}), open = false, ...rest } = props;
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
+      // eslint-disable-next-line react/no-unstable-nested-components -- Not a performance issue
       PaperComponent={({ children }) => (
         <Flex
           width="95vw"
@@ -36,14 +37,7 @@ export default function NFTPreviewDialog(props: NFTPreviewDialogProps) {
       )}
       {...rest}
     >
-      <NFTPreview
-        nft={nft}
-        width="100%"
-        height="100%"
-        fit="contain"
-        background={StyledNFTPreviewBackground}
-        hideStatusBar={true}
-      />
+      <NFTPreview id={id} width="100%" height="100%" background={StyledNFTPreviewBackground} />
     </Dialog>
   );
 }

@@ -1,21 +1,17 @@
-import React, { forwardRef } from 'react';
-import styled from 'styled-components';
-import { StateColor } from '@ball-network/core';
 import { FiberManualRecord as FiberManualRecordIcon } from '@mui/icons-material';
+import { styled } from '@mui/material';
+import React, { forwardRef } from 'react';
 
-const StyledFiberManualRecordIcon = styled(({ color, ...rest }) => (
-  <FiberManualRecordIcon {...rest} />
-))`
+const StyledFiberManualRecordIcon = styled(({ color, ...rest }: Props) => <FiberManualRecordIcon {...rest} />)`
   font-size: 1rem;
   color: ${({ color }) => color};
 `;
 
 type Props = {
-  color: StateColor;
+  color: string;
 };
 
-// @ts-ignore
-function Status(props: Props, ref) {
+const Status = forwardRef<HTMLDivElement, Props>((props, ref) => {
   const { color } = props;
 
   return (
@@ -23,6 +19,6 @@ function Status(props: Props, ref) {
       <StyledFiberManualRecordIcon color={color} />
     </div>
   );
-}
+});
 
-export default forwardRef(Status);
+export default Status;

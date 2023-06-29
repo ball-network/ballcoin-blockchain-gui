@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo } from 'react';
-import { Trans } from '@lingui/macro';
-import { IconButton, Typography } from '@mui/material';
-import { Flex } from '@ball-network/core';
-import { Route, Routes, useNavigate } from 'react-router-dom';
-import IdentitiesPanel from './IdentitiesPanel';
-import { LayoutDashboardSub } from '@ball-network/core';
-import ProfileView from './ProfileView';
-import ProfileAdd from './ProfileAdd';
-import { Add } from '@mui/icons-material';
-import { useGetWalletsQuery } from '@ball-network/api-react';
 import { WalletType } from '@ball-network/api';
+import { useGetWalletsQuery } from '@ball-network/api-react';
+import { Flex, LayoutDashboardSub, SettingsHR, SettingsSection, SettingsText } from '@ball-network/core';
+import { Trans } from '@lingui/macro';
+import { Grid } from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
+
+import IdentitiesPanel from './IdentitiesPanel';
+import ProfileAdd from './ProfileAdd';
+import ProfileView from './ProfileView';
 
 export default function SettingsProfiles() {
   const navigate = useNavigate();
-  const { data: wallets } = useGetWalletsQuery();
+  const { data: wallets, isLoading } = useGetWalletsQuery();
+  const [profileStartDisplay, setProfileStartDisplay] = useState(true);
 
   const didList = useMemo(() => {
     const dids: number[] = [];
@@ -24,43 +24,52 @@ export default function SettingsProfiles() {
         }
       });
     }
+    setProfileStartDisplay(true);
     return dids;
   }, [wallets]);
 
   useEffect(() => {
-    if (didList.length) {
-      navigate(`/dashboard/settings/profiles/${didList[0]}`);
-    } else {
-      navigate(`/dashboard/settings/profiles/add`);
+    if (isLoading) {
+      return;
     }
-  }, [didList]);
-
-  function navAdd() {
-    navigate(`/dashboard/settings/profiles/add`);
-  }
+    if (profileStartDisplay) {
+      if (didList.length) {
+        navigate(`/dashboard/settings/profiles/${didList[0]}`);
+      } else {
+        navigate(`/dashboard/settings/profiles/add`);
+      }
+      setProfileStartDisplay(false);
+    }
+  }, [isLoading, profileStartDisplay, didList, navigate]);
 
   return (
-    <div>
-      <Flex flexDirection="row" style={{ width: '350px' }}>
-        <Flex flexGrow={1}>
-          <Typography variant="h4">
-            <Trans>Profiles</Trans>
-          </Typography>
+    <Grid container style={{ maxWidth: '928px' }} gap={3}>
+      <Grid item>
+        <Flex flexDirection="column" gap={1}>
+          <SettingsSection>
+            <Trans>Profiles (DIDs)</Trans>
+          </SettingsSection>
+          <SettingsText>
+            <Trans>
+              A profile is a decentralized identifier (DID) that you can prove control and ownership of without having
+              to rely on any centralized authority.
+            </Trans>
+          </SettingsText>
         </Flex>
-        <Flex alignSelf="end">
-          <IconButton onClick={navAdd}>
-            <Add />
-          </IconButton>
-        </Flex>
-      </Flex>
-      <Routes>
-        <Route
-          element={<LayoutDashboardSub sidebar={<IdentitiesPanel />} outlet />}
-        >
-          <Route path=":walletId" element={<ProfileView />} />
-          <Route path="add" element={<ProfileAdd />} />
-        </Route>
-      </Routes>
-    </div>
+      </Grid>
+
+      <Grid item xs={12} sm={12} lg={12}>
+        <SettingsHR />
+      </Grid>
+
+      <Grid item xs={12} sm={12} lg={12}>
+        <Routes>
+          <Route element={<LayoutDashboardSub sidebar={<IdentitiesPanel />} outlet />}>
+            <Route path=":walletId" element={<ProfileView />} />
+            <Route path="add" element={<ProfileAdd />} />
+          </Route>
+        </Routes>
+      </Grid>
+    </Grid>
   );
 }

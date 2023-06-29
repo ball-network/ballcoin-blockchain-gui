@@ -1,16 +1,14 @@
 import { ServiceName } from '@ball-network/api';
 import { useService } from '@ball-network/api-react';
+
 import FarmerStatus from '../constants/FarmerStatus';
 import FullNodeState from '../constants/FullNodeState';
 import useFullNodeState from './useFullNodeState';
 
 export default function useFarmerStatus(): FarmerStatus {
-  const { state: fullNodeState, isLoading: isLoadingFullNodeState } =
-    useFullNodeState();
+  const { state: fullNodeState, isLoading: isLoadingFullNodeState } = useFullNodeState();
 
-  const { isRunning, isLoading: isLoadingIsRunning } = useService(
-    ServiceName.FARMER,
-  );
+  const { isRunning, isLoading: isLoadingIsRunning } = useService(ServiceName.FARMER);
 
   const isLoading = isLoadingIsRunning || isLoadingFullNodeState;
 

@@ -1,10 +1,10 @@
-const path = require('path');
-const child_process = require('child_process');
+const childProcess = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
-/*************************************************************
+/** ***********************************************************
  * py process
- *************************************************************/
+ ************************************************************ */
 
 const PY_MAC_DIST_FOLDER = '../../../app.asar.unpacked/daemon';
 const PY_WIN_DIST_FOLDER = '../../../app.asar.unpacked/daemon';
@@ -13,7 +13,7 @@ const PY_FOLDER = '../../../ball/daemon';
 const PY_MODULE = 'server'; // without .py suffix
 
 let pyProc = null;
-let have_cert = null;
+let haveCert = null;
 
 const guessPackaged = () => {
   let packed;
@@ -27,34 +27,34 @@ const guessPackaged = () => {
   return packed;
 };
 
-const getScriptPath = (dist_file) => {
-  if (!guessPackaged()) {
-    return path.join(PY_FOLDER, PY_MODULE + '.py');
-  }
-  return getExecutablePath(dist_file);
-};
-
 const getExecutablePath = (dist_file) => {
   if (process.platform === 'win32') {
-    return path.join(__dirname, PY_WIN_DIST_FOLDER, dist_file + '.exe');
+    return path.join(__dirname, PY_WIN_DIST_FOLDER, `${dist_file}.exe`);
   }
   return path.join(__dirname, PY_MAC_DIST_FOLDER, dist_file);
+};
+
+const getScriptPath = (dist_file) => {
+  if (!guessPackaged()) {
+    return path.join(PY_FOLDER, `${PY_MODULE}.py`);
+  }
+  return getExecutablePath(dist_file);
 };
 
 const getBallVersion = () => {
   let version = null;
   const exePath = getExecutablePath('ball');
-  // first see if we can get a ballcoin exe in a standard location relative to where we are
+  // first see if we can get a ball exe in a standard location relative to where we are
   try {
-    version = child_process
+    version = childProcess
       .execFileSync(exePath, ['version'], {
         encoding: 'UTF-8',
       })
       .trim();
   } catch (e1) {
-    // that didn't work, let's try as if we're in the venv or ballcoin is on the path
+    // that didn't work, let's try as if we're in the venv or ball is on the path
     try {
-      version = child_process
+      version = childProcess
         .execFileSync(path.basename(exePath), ['version'], {
           encoding: 'UTF-8',
         })
@@ -68,69 +68,75 @@ const getBallVersion = () => {
 };
 
 const startBallDaemon = () => {
-  let script = getScriptPath(PY_DIST_FILE);
-  let processOptions = {};
-  //processOptions.detached = true;
-  //processOptions.stdio = "ignore";
+  const script = getScriptPath(PY_DIST_FILE);
+  const processOptions = {};
+  // processOptions.detached = true;
+  // processOptions.stdio = "ignore";
   pyProc = null;
   if (guessPackaged()) {
     try {
-      console.log('Running python executable: ');
-      const Process = child_process.spawn;
-      pyProc = new Process(script, ["--wait-for-unlock"], processOptions);
+      console.info('Running python executable: ');
+      const Process = childProcess.spawn;
+      pyProc = new Process(script, ['--wait-for-unlock'], processOptions);
     } catch (e) {
-      console.log('Running python executable: Error: ');
-      console.log('Script ' + script);
+      console.info('Running python executable: Error: ');
+      console.info(`Script ${script}`);
     }
   } else {
-    console.log('Running python script');
-    console.log('Script ' + script);
+    console.info('Running python script');
+    console.info(`Script ${script}`);
 
-    const Process = child_process.spawn;
-    pyProc = new Process('python', [script, "--wait-for-unlock"], processOptions);
+    const Process = childProcess.spawn;
+    pyProc = new Process('python', [script, '--wait-for-unlock'], processOptions);
   }
   if (pyProc != null) {
     pyProc.stdout.setEncoding('utf8');
 
-    pyProc.stdout.on('data', function (data) {
-      if (!have_cert) {
+    pyProc.stdout.on('data', (data) => {
+      if (!haveCert) {
         process.stdout.write('No cert\n');
         // listen for ssl path message
         try {
-          let str_arr = data.toString().split('\n');
-          for (var i = 0; i < str_arr.length; i++) {
-            let str = str_arr[i];
+          const strArr = data.toString().split('\n');
+          for (let i = 0; i < strArr.length; i++) {
+            const str = strArr[i];
             try {
-              let json = JSON.parse(str);
-              global.cert_path = json['cert'];
-              global.key_path = json['key'];
-              if (cert_path && key_path) {
-                have_cert = true;
+              const json = JSON.parse(str);
+              global.cert_path = json.cert;
+              global.key_path = json.key;
+              // TODO Zlatko: cert_path and key_path were undefined. Prefixed them with global, which changes functionality.
+              // Do they even need to be globals?
+              if (global.cert_path && global.key_path) {
+                haveCert = true;
                 process.stdout.write('Have cert\n');
                 return;
               }
-            } catch (e) {}
+            } catch (e) {
+              // Do nothing
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          // Do nothing
+        }
       }
 
       process.stdout.write(data.toString());
     });
 
     pyProc.stderr.setEncoding('utf8');
-    pyProc.stderr.on('data', function (data) {
-      //Here is where the error output goes
-      process.stdout.write('stderr: ' + data.toString());
+    pyProc.stderr.on('data', (data) => {
+      // Here is where the error output goes
+      process.stdout.write(`stderr: ${data.toString()}`);
     });
 
-    pyProc.on('close', function (code) {
-      //Here you can get the exit code of the script
-      console.log('closing code: ' + code);
+    pyProc.on('close', (code) => {
+      // Here you can get the exit code of the script
+      console.info(`closing code: ${code}`);
     });
 
-    console.log('child process success');
+    console.info('child process success');
   }
-  //pyProc.unref();
+  // pyProc.unref();
 };
 
 module.exports = {

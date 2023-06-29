@@ -1,11 +1,13 @@
-# @ball-network/api-react
+# ballcoin-blockchain-gui/api-react
 
-![Alt text](https://www.ballcoin.top/img/ball_logo.svg)
+![Ball logo](https://www.ballcoin.top/wp-content/uploads/2022/09/ball-logo.svg)
 
-This library provides react hooks on the top of @ball-network/api and uses [RTK Query](https://redux-toolkit.js.org/rtk-query/overview) under do hood.
-It is designed to simplify common cases for loading data in a web application, eliminating the need to hand-write data fetching & caching logic yourself. Providing much more benefits:
+![GitHub contributors](https://img.shields.io/github/contributors/Ball-Network/ballcoin-blockchain-gui?logo=GitHub)
 
-- Automatically refresh queries when data changed (using events from Ball Blockchain).
+This library provides react hooks on the top of @ball-network/api and uses [RTK Query](https://redux-toolkit.js.org/rtk-query/overview) under the hood.
+It is designed to simplify common cases for loading data in a web application, eliminating the need to hand-write data fetching & caching logic yourself. Benefits include:
+
+- Automatically refresh queries when data changed (using events from BallCoin Blockchain).
 - Tracking loading state in order to show UI spinners.
 - Avoiding duplicate requests for the same data.
 - Optimistic updates to make the UI feel faster.
@@ -26,25 +28,17 @@ export default function PublicKeys() {
   const { data: publicKeys, isLoading, error } = useGetPublicKeysQuery();
 
   if (isLoading) {
-    return (
-      <Suspender />
-    );
+    return <Suspender />;
   }
 
   if (error) {
-    return (
-      <Alert severiry="error">
-        {error.message}
-      </Alert>
-    );
+    return <Alert severity="error">{error.message}</Alert>;
   }
 
   return (
     <ul>
-      {publicKeys.map(key => (
-        <li key={key}>
-          {key}
-        </li>
+      {publicKeys.map((key) => (
+        <li key={key}>{key}</li>
       ))}
     </ul>
   );
@@ -71,9 +65,13 @@ export default function Application() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Provider store={store}>
-        <PublickKeys />
+        <PublicKeys />
       </Provider>
     </Suspense>
   );
 }
 ```
+
+## Development
+
+Please read and follow the main [README.md](https://github.com/Ball-Network/ballcoin-blockchain-gui) of this monorepo.

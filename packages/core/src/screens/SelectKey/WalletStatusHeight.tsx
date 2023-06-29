@@ -1,11 +1,15 @@
-import React from 'react';
-import { FormatLargeNumber } from '@ball-network/core';
 import { useGetHeightInfoQuery } from '@ball-network/api-react';
+import React from 'react';
+
+import FormatLargeNumber from '../../components/FormatLargeNumber';
 
 export default function WalletStatusHeight() {
-  const { data: height, isLoading } = useGetHeightInfoQuery({}, {
-    pollingInterval: 10000,
-  });
+  const { data: height, isLoading } = useGetHeightInfoQuery(
+    {},
+    {
+      pollingInterval: 10_000,
+    }
+  );
 
   if (isLoading) {
     return null;
@@ -17,9 +21,8 @@ export default function WalletStatusHeight() {
 
   return (
     <>
-      {'('}
-      <FormatLargeNumber value={height} />
-      {')'}
+      (
+      <FormatLargeNumber value={height} />)
     </>
   );
 }

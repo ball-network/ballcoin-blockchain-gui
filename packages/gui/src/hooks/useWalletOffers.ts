@@ -1,6 +1,21 @@
-import { useState } from 'react';
+import { OfferCoinOfInterest, OfferSummaryRecord } from '@ball-network/api';
 import { useGetOffersCountQuery, useGetAllOffersQuery } from '@ball-network/api-react';
-import { OfferTradeRecord } from '@ball-network/api';
+import { useState, useCallback } from 'react';
+
+export type OfferTradeRecordFormatted = {
+  confirmedAtIndex: number;
+  acceptedAtTime: number;
+  createdAtTime: number;
+  isMyOffer: boolean;
+  pending: Record<string, number>;
+  sent: number;
+  coinsOfInterest: OfferCoinOfInterest[];
+  tradeId: string;
+  status: string;
+  sentTo: any[];
+  summary: OfferSummaryRecord;
+  offerData?: string;
+};
 
 export default function useWalletOffers(
   defaultRowsPerPage = 5,
@@ -8,10 +23,10 @@ export default function useWalletOffers(
   includeMyOffers = true,
   includeTakenOffers = true,
   sortKey?: 'CONFIRMED_AT_HEIGHT' | 'RELEVANCE',
-  reverse?: boolean,
+  reverse?: boolean
 ): {
   isLoading: boolean;
-  offers?: OfferTradeRecord[];
+  offers?: OfferTradeRecordFormatted[];
   count?: number;
   error?: Error;
   page: number;
@@ -25,9 +40,7 @@ export default function useWalletOffers(
 
   const all = rowsPerPage === -1;
 
-  const start = all
-    ? 0
-    : page * rowsPerPage;
+  const start = all ? 0 : page * rowsPerPage;
 
   let selectedCount = 0;
 
@@ -39,11 +52,13 @@ export default function useWalletOffers(
     selectedCount += counts?.takenOffersCount ?? 0;
   }
 
-  const end = all
-    ? selectedCount
-    : start + rowsPerPage;
+  const end = all ? selectedCount : start + rowsPerPage;
 
-  const { data: offers, isLoading: isOffersLoading, error: offersError } = useGetAllOffersQuery({
+  const {
+    data: offers,
+    isLoading: isOffersLoading,
+    error: offersError,
+  } = useGetAllOffersQuery({
     start,
     end,
     sortKey,
@@ -55,12 +70,15 @@ export default function useWalletOffers(
   const isLoading = isOffersLoading || isOffersCountLoading;
   const error = offersError || offersCountError;
 
-  function handlePageChange(rowsPerPage: number, page: number) {
-    setRowsPerPage(rowsPerPage);
-    setPage(page);
-  }
+  const handlePageChange = useCallback(
+    (rowsPerPageLocal: number, pageLocal: number) => {
+      setRowsPerPage(rowsPerPageLocal);
+      setPage(pageLocal);
+    },
+    [setRowsPerPage, setPage]
+  );
 
-  return  {
+  return {
     offers,
     count: selectedCount,
     page,

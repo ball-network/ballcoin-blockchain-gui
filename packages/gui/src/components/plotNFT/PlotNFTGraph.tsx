@@ -1,16 +1,10 @@
-import React, { ReactNode } from 'react';
-import { t } from '@lingui/macro';
-import {
-  VictoryChart,
-  VictoryAxis,
-  VictoryArea,
-  VictoryTooltip,
-  VictoryVoronoiContainer,
-} from 'victory';
-import { useMeasure } from 'react-use';
-import { Box, Typography } from '@mui/material';
 import { Flex } from '@ball-network/core';
 import { WalletGraphTooltip } from '@ball-network/wallets';
+import { t } from '@lingui/macro';
+import { Box, Typography } from '@mui/material';
+import React, { ReactNode } from 'react';
+import { useMeasure } from 'react-use';
+import { VictoryChart, VictoryAxis, VictoryArea, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
 
 const HOUR_SECONDS = 60 * 60;
 
@@ -69,10 +63,11 @@ export default function PlotNFTGraph(props: PlotNFTGraphProps) {
     tooltip: t`${item.y} points ${item.x - 2} - ${item.x} hours ago`,
   }));
 
-  const min = aggregated.length
-    ? Math.min(...aggregated.map((item) => item.y))
-    : 0;
-  const max = Math.max(min, ...aggregated.map((item) => item.y));
+  const minX = aggregated.length ? Math.min(...aggregated.map((item) => item.x)) : 0;
+  const maxX = Math.max(minX, ...aggregated.map((item) => item.x));
+
+  const minY = aggregated.length ? Math.min(...aggregated.map((item) => item.y)) : 0;
+  const maxY = Math.max(minY, ...aggregated.map((item) => item.y));
 
   return (
     <Box>
@@ -87,14 +82,14 @@ export default function PlotNFTGraph(props: PlotNFTGraphProps) {
             animate={{ duration: 300, onLoad: { duration: 0 } }}
             width={containerSize.width || 1}
             height={containerSize.height || 1}
-            domain={{ y: [0, max] }}
+            domain={{ x: [maxX, minX], y: [0, maxY] }}
             padding={0}
             domainPadding={{ x: 0, y: 1 }}
             containerComponent={<VictoryVoronoiContainer />}
           >
             <VictoryArea
               data={data}
-              interpolation={'monotoneX'}
+              interpolation="monotoneX"
               style={{
                 data: {
                   stroke: '#5DAA62',
@@ -104,9 +99,7 @@ export default function PlotNFTGraph(props: PlotNFTGraphProps) {
                 },
               }}
               labels={() => ''}
-              labelComponent={
-                <VictoryTooltip flyoutComponent={<WalletGraphTooltip />} />
-              }
+              labelComponent={<VictoryTooltip flyoutComponent={<WalletGraphTooltip />} />}
             />
             <VictoryAxis
               style={{

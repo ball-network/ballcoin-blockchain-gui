@@ -1,19 +1,18 @@
-import React from 'react';
-import { Trans } from '@lingui/macro';
 import { Flex } from '@ball-network/core';
-import { useWatch } from 'react-hook-form';
 import { Offering, Requesting } from '@ball-network/icons';
-import OfferBuilderHeader from './OfferBuilderHeader';
+import { Trans } from '@lingui/macro';
+import React from 'react';
+import { useWatch } from 'react-hook-form';
+
+import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
 import OfferBuilderFeeSection from './OfferBuilderFeeSection';
+import OfferBuilderHeader from './OfferBuilderHeader';
 import OfferBuilderNFTSection from './OfferBuilderNFTSection';
 import OfferBuilderTokensSection from './OfferBuilderTokensSection';
 import OfferBuilderBALLSection from './OfferBuilderBALLSection';
-import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
 
-function getTitle(offering = false, viewer = false, isMyOffer = false) {
-  if (isMyOffer) {
-    offering = !offering;
-  }
+function getTitle(offeringParam = false, viewer = false, isMyOffer = false) {
+  const offering = isMyOffer ? !offeringParam : offeringParam;
 
   if (offering) {
     if (viewer) {
@@ -30,10 +29,8 @@ function getTitle(offering = false, viewer = false, isMyOffer = false) {
   return <Trans>Requesting</Trans>;
 }
 
-function getSubTitle(offering = false, viewer = false, isMyOffer = false) {
-  if (isMyOffer) {
-    offering = !offering;
-  }
+function getSubTitle(offeringParam = false, viewer = false, isMyOffer = false) {
+  const offering = isMyOffer ? !offeringParam : offeringParam;
 
   if (offering) {
     if (viewer) {
@@ -50,16 +47,10 @@ function getSubTitle(offering = false, viewer = false, isMyOffer = false) {
   return <Trans>Assets I would like to receive </Trans>;
 }
 
-function getIcon(offering = false, isMyOffer = false) {
-  if (isMyOffer) {
-    offering = !offering;
-  }
+function getIcon(offeringParam = false, isMyOffer = false) {
+  const offering = isMyOffer ? !offeringParam : offeringParam;
 
-  return offering ? (
-    <Offering fontSize="large" />
-  ) : (
-    <Requesting fontSize="large" />
-  );
+  return offering ? <Offering fontSize="large" /> : <Requesting fontSize="large" />;
 }
 
 export type OfferBuilderTradeColumnProps = {
@@ -69,13 +60,11 @@ export type OfferBuilderTradeColumnProps = {
   isMyOffer?: boolean;
 };
 
-export default function OfferBuilderTradeColumn(
-  props: OfferBuilderTradeColumnProps,
-) {
+export default function OfferBuilderTradeColumn(props: OfferBuilderTradeColumnProps) {
   const { name, offering = false, viewer = false, isMyOffer = false } = props;
   const { readOnly } = useOfferBuilderContext();
 
-  const ballcoin = useWatch({
+  const ball = useWatch({
     name: `${name}.ball`,
   });
 
@@ -115,20 +104,10 @@ export default function OfferBuilderTradeColumn(
           padding: 1,
         }}
       >
-        {showBALL && (
-          <OfferBuilderBALLSection
-            name={`${name}.ball`}
-            offering={offering}
-            muted={mutedBALL}
-          />
-        )}
+        {showBALL && <OfferBuilderBALLSection name={`${name}.ball`} offering={offering} muted={mutedBALL} />}
 
         {showTokensSection && (
-          <OfferBuilderTokensSection
-            name={`${name}.tokens`}
-            offering={offering}
-            muted={mutedTokens}
-          />
+          <OfferBuilderTokensSection name={`${name}.tokens`} offering={offering} muted={mutedTokens} />
         )}
 
         {showNFTSection && (
@@ -141,13 +120,7 @@ export default function OfferBuilderTradeColumn(
           />
         )}
 
-        {showFeeSection && (
-          <OfferBuilderFeeSection
-            name={`${name}.fee`}
-            offering={offering}
-            viewer={viewer}
-          />
-        )}
+        {showFeeSection && <OfferBuilderFeeSection name={`${name}.fee`} offering={offering} viewer={viewer} />}
       </Flex>
     </Flex>
   );

@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
 import type { PlotNFT, Plot } from '@ball-network/api';
 import { useIsWalletSynced } from '@ball-network/wallets';
+import { useMemo } from 'react';
+
 import PlotNFTState from '../constants/PlotNFTState';
 import usePlotNFTName from './usePlotNFTName';
 

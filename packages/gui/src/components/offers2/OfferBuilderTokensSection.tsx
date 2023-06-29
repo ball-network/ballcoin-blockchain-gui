@@ -1,15 +1,16 @@
-import React, { useMemo } from 'react';
-import { Trans } from '@lingui/macro';
-import { Tokens } from '@ball-network/icons';
-import { Flex, Loading, catToMojo, mojoToCATLocaleString } from '@ball-network/core';
 import { WalletType } from '@ball-network/api';
 import type { Wallet } from '@ball-network/api';
 import { useGetWalletsQuery } from '@ball-network/api-react';
+import { Flex, Loading, catToMojo, mojoToCATLocaleString } from '@ball-network/core';
+import { Tokens } from '@ball-network/icons';
+import { Trans } from '@lingui/macro';
+import BigNumber from 'bignumber.js';
+import React, { useMemo } from 'react';
 import { useFieldArray, useWatch } from 'react-hook-form';
+
+import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
 import OfferBuilderSection from './OfferBuilderSection';
 import OfferBuilderToken from './OfferBuilderToken';
-import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
-import BigNumber from 'bignumber.js';
 
 export type OfferBuilderTokensSectionProps = {
   name: string;
@@ -17,9 +18,7 @@ export type OfferBuilderTokensSectionProps = {
   muted?: boolean;
 };
 
-export default function OfferBuilderTokensSection(
-  props: OfferBuilderTokensSectionProps,
-) {
+export default function OfferBuilderTokensSection(props: OfferBuilderTokensSectionProps) {
   const { name, offering, muted } = props;
 
   const { data: wallets, isLoading: isLoadingWallets } = useGetWalletsQuery();
@@ -29,48 +28,40 @@ export default function OfferBuilderTokensSection(
   const tokens = useWatch({
     name,
   });
-  const {
-    readOnly,
-    requestedRoyalties,
-    offeredRoyalties,
-    isCalculatingRoyalties,
-  } = useOfferBuilderContext();
+  const { requestedRoyalties, offeredRoyalties, isCalculatingRoyalties } = useOfferBuilderContext();
   const loading = isLoadingWallets || isCalculatingRoyalties;
 
   // Yes, this is correct. Fungible (token) assets used to pay royalties are from the opposite side of the trade.
   const allRoyalties = offering ? requestedRoyalties : offeredRoyalties;
 
   const [amountWithRoyalties, royaltiesByAssetId] = useMemo(() => {
-    if (!readOnly || !allRoyalties) {
+    if (!allRoyalties) {
       return [];
     }
 
     const tokenAmountsWithRoyalties: Record<string, BigNumber> = {};
-    const royaltiesByAssetId: Record<string, any> = {};
-    const assetIds = fields.map((field) => field.assetId);
+    const royaltiesByAssetIdLocal: Record<string, any> = {};
+    const assetIds = tokens.map((token) => token.assetId);
 
-    fields.forEach((field) => {
-      tokenAmountsWithRoyalties[field.assetId] = catToMojo(field.amount ?? 0);
+    tokens.forEach((token) => {
+      tokenAmountsWithRoyalties[token.assetId] = catToMojo(token.amount ?? 0);
     });
 
-    assetIds.map((assetId) => {
+    assetIds.forEach((assetId) => {
       Object.entries(allRoyalties).forEach(([nftId, royaltyPayments]) => {
-        const royaltyPayment = royaltyPayments?.find(
-          (payment) => payment.asset === assetId,
-        );
+        const royaltyPayment = royaltyPayments?.find((payment) => payment.asset === assetId);
 
         if (royaltyPayment) {
-          if (!royaltiesByAssetId[assetId]) {
-            royaltiesByAssetId[assetId] = [];
+          if (!royaltiesByAssetIdLocal[assetId]) {
+            royaltiesByAssetIdLocal[assetId] = [];
           }
 
-          const baseTotal: BigNumber =
-            tokenAmountsWithRoyalties[royaltyPayment.asset];
+          const baseTotal: BigNumber = tokenAmountsWithRoyalties[royaltyPayment.asset];
           const totalAmount = baseTotal.plus(royaltyPayment.amount);
 
           tokenAmountsWithRoyalties[royaltyPayment.asset] = totalAmount;
 
-          royaltiesByAssetId[assetId].push({
+          royaltiesByAssetIdLocal[assetId].push({
             nftId,
             payment: {
               asset: royaltyPayment.asset,
@@ -88,8 +79,8 @@ export default function OfferBuilderTokensSection(
       amountsWithRoyalties[assetId] = mojoToCATLocaleString(amount);
     });
 
-    return [amountsWithRoyalties, royaltiesByAssetId];
-  }, [fields, readOnly, allRoyalties]);
+    return [amountsWithRoyalties, royaltiesByAssetIdLocal];
+  }, [tokens, allRoyalties]);
 
   function handleAdd() {
     append({
@@ -103,18 +94,14 @@ export default function OfferBuilderTokensSection(
   }
 
   const { usedAssetIds } = useOfferBuilderContext();
-  // const usedAssets = tokens.map((field) => field.assetId);
   const showAdd = useMemo(() => {
     if (!wallets) {
       return false;
     }
 
-    const emptyTokensCount =
-      tokens?.filter((token) => !token.assetId).length ?? 0;
+    const emptyTokensCount = tokens?.filter((token) => !token.assetId).length ?? 0;
 
-    const catWallets = wallets.filter(
-      (wallet: Wallet) => wallet.type === WalletType.CAT,
-    );
+    const catWallets = wallets.filter((wallet: Wallet) => wallet.type === WalletType.CAT);
 
     const availableTokensCount = catWallets.length - usedAssetIds.length;
     return availableTokensCount > emptyTokensCount;
@@ -124,9 +111,7 @@ export default function OfferBuilderTokensSection(
     <OfferBuilderSection
       icon={<Tokens />}
       title={<Trans>Tokens</Trans>}
-      subtitle={
-        <Trans>Ball Asset Tokens (CATs) are tokens built on top of BALL</Trans>
-      }
+      subtitle={<Trans>Ball Asset Tokens (CATs) are tokens built on top of BALL</Trans>}
       onAdd={showAdd ? handleAdd : undefined}
       expanded={!!fields.length}
       muted={muted}
@@ -138,12 +123,11 @@ export default function OfferBuilderTokensSection(
           {fields.map((field, index) => (
             <OfferBuilderToken
               key={field.id}
-              // usedAssets={usedAssets}
               name={`${name}.${index}`}
               onRemove={() => handleRemove(index)}
               hideBalance={!offering}
-              amountWithRoyalties={amountWithRoyalties?.[field.assetId]}
-              royaltyPayments={royaltiesByAssetId?.[field.assetId]}
+              amountWithRoyalties={amountWithRoyalties?.[tokens[index]?.assetId]}
+              royaltyPayments={royaltiesByAssetId?.[tokens[index]?.assetId]}
             />
           ))}
         </Flex>

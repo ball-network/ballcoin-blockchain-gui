@@ -1,55 +1,38 @@
-import React, { useEffect } from 'react';
+import { usePrefs } from '@ball-network/api-react';
+import { AlertDialog, ButtonLoading, Flex, Form, TextField, useOpenDialog } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLocalStorage } from '@ball-network/api-react';
-import {
-  AlertDialog,
-  ButtonLoading,
-  Flex,
-  Form,
-  TextField,
-  useOpenDialog,
-} from '@ball-network/core';
 
-import { getCacheInstances, removeFromLocalStorage } from '../../util/utils';
+import useCache from '../../hooks/useCache';
 
-import { defaultCacheSizeLimit } from '../nfts/gallery/NFTGallery';
+const MB_SIZE = 1024 * 1024;
 
 type FormData = {
-  cacheLimitSize: number;
+  maxCacheSize: number;
 };
 
-const ipcRenderer = (window as any).ipcRenderer;
-
-function LimitCacheSize(props: any) {
-  const { forceUpdateCacheSize } = props;
+export default function LimitCacheSize() {
   const openDialog = useOpenDialog();
+  const { maxCacheSize, setMaxCacheSize } = useCache();
 
-  const [cacheLimitSize, setCacheLimitSize] = useLocalStorage(
-    `cacheLimitSize`,
-    defaultCacheSizeLimit,
-  );
+  const [, setCacheLimitSize] = usePrefs(`cacheLimitSize`, 0);
 
   const methods = useForm<FormData>({
     defaultValues: {
-      cacheLimitSize: cacheLimitSize ?? 0,
+      maxCacheSize,
     },
   });
 
-  function removeFromLocalStorageListener(_event, response: any) {
-    removeFromLocalStorage({ removedObjects: response?.removedEntries });
-    forceUpdateCacheSize();
-  }
+  const { reset } = methods;
 
   useEffect(() => {
-    ipcRenderer.on('removedFromLocalStorage', removeFromLocalStorageListener);
-    return () => {
-      ipcRenderer.removeListener(
-        'removedFromLocalStorage',
-        removeFromLocalStorageListener,
-      );
-    };
-  }, []);
+    if (maxCacheSize !== undefined) {
+      reset({
+        maxCacheSize: maxCacheSize / MB_SIZE,
+      });
+    }
+  }, [maxCacheSize, reset]);
 
   const { isSubmitting } = methods.formState;
   const isLoading = isSubmitting;
@@ -60,19 +43,16 @@ function LimitCacheSize(props: any) {
       return;
     }
 
-    setCacheLimitSize(values?.cacheLimitSize);
+    const newValue = Number(values.maxCacheSize) * MB_SIZE;
 
-    if (ipcRenderer) {
-      ipcRenderer.invoke('adjustCacheLimitSize', {
-        newSize: values?.cacheLimitSize,
-        cacheInstances: getCacheInstances(),
-      });
-    }
+    // todo move it ti electron/main
+    setCacheLimitSize(newValue);
+    await setMaxCacheSize(newValue);
 
     await openDialog(
       <AlertDialog>
         <Trans>Successfully updated cache size limit.</Trans>
-      </AlertDialog>,
+      </AlertDialog>
     );
   }
 
@@ -81,7 +61,7 @@ function LimitCacheSize(props: any) {
       <Flex gap={2} row>
         <TextField
           label="MiB"
-          name="cacheLimitSize"
+          name="maxCacheSize"
           type="number"
           disabled={!canSubmit}
           size="small"
@@ -105,5 +85,3 @@ function LimitCacheSize(props: any) {
     </Form>
   );
 }
-
-export default React.memo(LimitCacheSize);

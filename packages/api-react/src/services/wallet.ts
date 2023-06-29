@@ -1,35 +1,20 @@
-import {
-  CAT,
-  DID,
-  Farmer,
-  NFT,
-  OfferTradeRecord,
-  Pool,
-  Wallet,
-  WalletType,
-  toBech32m,
-} from '@ball-network/api';
-import type {
-  CalculateRoyaltiesRequest,
-  CalculateRoyaltiesResponse,
-  CATToken,
-  NFTInfo,
-  PlotNFT,
-  PlotNFTExternal,
-  Transaction,
-  WalletBalance,
-  WalletConnections,
-} from '@ball-network/api';
+/* eslint-disable no-param-reassign -- This file use Immer */
+import { CAT, DID, Farmer, NFT, Pool, Staking, WalletService, WalletType, toBech32m } from '@ball-network/api';
+import type { NFTInfo, Transaction, Wallet, WalletBalance } from '@ball-network/api';
 import BigNumber from 'bignumber.js';
-import onCacheEntryAddedInvalidate from '../utils/onCacheEntryAddedInvalidate';
-import normalizePoolState from '../utils/normalizePoolState';
+
 import api, { baseQuery } from '../api';
+import normalizePoolState from '../utils/normalizePoolState';
+import onCacheEntryAddedInvalidate from '../utils/onCacheEntryAddedInvalidate';
+import { query, mutation } from '../utils/reduxToolkitEndpointAbstractions';
 
 const apiWithTag = api.enhanceEndpoints({
   addTagTypes: [
     'Address',
+    'CATWalletInfo',
     'DID',
     'DIDCoinInfo',
+    'DIDInfo',
     'DIDName',
     'DIDPubKey',
     'DIDRecoveryInfo',
@@ -37,6 +22,7 @@ const apiWithTag = api.enhanceEndpoints({
     'DIDWallet',
     'Keys',
     'LoggedInFingerprint',
+    'NFTCount',
     'NFTInfo',
     'NFTRoyalties',
     'NFTWalletWithDID',
@@ -52,49 +38,32 @@ const apiWithTag = api.enhanceEndpoints({
     'DerivationIndex',
     'CATs',
     'DaemonKey',
+    'Notification',
   ],
 });
 
-type OfferCounts = {
-  total: number;
-  my_offers: number;
-  taken_offers: number;
-};
-
 export const walletApi = apiWithTag.injectEndpoints({
   endpoints: (build) => ({
-    walletPing: build.query<boolean, {}>({
-      query: () => ({
-        command: 'ping',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.success,
-    }),
+    walletPing: query(build, WalletService, 'ping'),
 
-    getLoggedInFingerprint: build.query<string | undefined, {}>({
-      query: () => ({
-        command: 'getLoggedInFingerprint',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.fingerprint,
+    getLoggedInFingerprint: query(build, WalletService, 'getLoggedInFingerprint', {
+      transformResponse: (response) => response.fingerprint,
       providesTags: ['LoggedInFingerprint'],
     }),
 
-    getWallets: build.query<Wallet[], undefined>({
-      /*
-      query: () => ({
-        command: 'getWallets',
-      }),
-      */
-      async queryFn(_args, _queryApi, _extraOptions, fetchWithBQ) {
+    // TODO refactor
+    getWallets: build.query<Wallet[], { includeData?: boolean } | void>({
+      // eslint-disable-next-line @typescript-eslint/default-param-last -- cannot change order
+      async queryFn(args = { includeData: false }, _queryApi, _extraOptions, fetchWithBQ) {
         try {
           const { data, error } = await fetchWithBQ({
             command: 'getWallets',
-            service: Wallet,
+            service: WalletService,
+            args,
           });
 
           if (error) {
-            throw error;
+            throw error as Error;
           }
 
           const wallets = data?.wallets;
@@ -106,32 +75,30 @@ export const walletApi = apiWithTag.injectEndpoints({
             data: await Promise.all(
               wallets.map(async (wallet: Wallet) => {
                 const { type } = wallet;
-                const meta = {};
+                const meta: any = {};
                 if (type === WalletType.CAT) {
                   // get CAT asset
-                  const { data: assetData, error: assetError } =
-                    await fetchWithBQ({
-                      command: 'getAssetId',
-                      service: CAT,
-                      args: [wallet.id],
-                    });
+                  const { data: assetData, error: assetError } = await fetchWithBQ({
+                    command: 'getAssetId',
+                    service: CAT,
+                    args: { walletId: wallet.id },
+                  });
 
                   if (assetError) {
-                    throw assetError;
+                    throw assetError as Error;
                   }
 
                   meta.assetId = assetData.assetId;
 
                   // get CAT name
-                  const { data: nameData, error: nameError } =
-                    await fetchWithBQ({
-                      command: 'getName',
-                      service: CAT,
-                      args: [wallet.id],
-                    });
+                  const { data: nameData, error: nameError } = await fetchWithBQ({
+                    command: 'getName',
+                    service: CAT,
+                    args: { walletId: wallet.id },
+                  });
 
                   if (nameError) {
-                    throw nameError;
+                    throw nameError as Error;
                   }
 
                   meta.name = nameData.name;
@@ -140,11 +107,11 @@ export const walletApi = apiWithTag.injectEndpoints({
                   const { data: didData, error: didError } = await fetchWithBQ({
                     command: 'getNftWalletDid',
                     service: NFT,
-                    args: [wallet.id],
+                    args: { walletId: wallet.id },
                   });
 
                   if (didError) {
-                    throw didError;
+                    throw didError as Error;
                   }
 
                   meta.did = didData.didId;
@@ -157,46 +124,33 @@ export const walletApi = apiWithTag.injectEndpoints({
               })
             ),
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
         }
       },
-      // transformResponse: (response: any) => response?.wallets,
+      // transformResponse: (response) => response.wallets,
       providesTags(result) {
         return result
-          ? [
-              ...result.map(({ id }) => ({ type: 'Wallets', id } as const)),
-              { type: 'Wallets', id: 'LIST' },
-            ]
+          ? [...result.map(({ id }) => ({ type: 'Wallets', id } as const)), { type: 'Wallets', id: 'LIST' }]
           : [{ type: 'Wallets', id: 'LIST' }];
       },
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onWalletCreated',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWallets,
+          service: WalletService,
+          endpoint: 'getWallets',
         },
       ]),
     }),
 
-    getTransaction: build.query<
-      Transaction,
-      {
-        transactionId: string;
-      }
-    >({
-      query: ({ transactionId }) => ({
-        command: 'getTransaction',
-        service: Wallet,
-        args: [transactionId],
-      }),
-      transformResponse: (response: any) => response?.transaction,
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+    getTransaction: query(build, WalletService, 'getTransaction', {
+      transformResponse: (response) => response.transaction,
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onTransactionUpdate',
-          service: Wallet,
+          service: WalletService,
           onUpdate: (draft, data, { transactionId }) => {
             const {
               additionalData: { transaction },
@@ -210,160 +164,65 @@ export const walletApi = apiWithTag.injectEndpoints({
       ]),
     }),
 
-    getPwStatus: build.query<
-      any,
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'getPwStatus',
-        service: Wallet,
-        args: [walletId],
-      }),
-      /*
-      transformResponse: (response: any, _error, { walletId }) => ({
-        ...response,
-        walletId,
-      }),
-      */
+    getTransactionMemo: mutation(build, WalletService, 'getTransactionMemo', {
+      transformResponse: (response) => {
+        const id = Object.keys(response)[0];
+        return {
+          [id]: response[id][id]?.[0],
+        };
+      },
+    }),
+
+    getPwStatus: query(build, WalletService, 'getPwStatus', {
       providesTags(result, _error, { walletId }) {
         return result ? [{ type: 'PoolWalletStatus', id: walletId }] : [];
       },
     }),
 
-    pwAbsorbRewards: build.mutation<
-      any,
-      {
-        walletId: number;
-        fee: string;
-      }
-    >({
-      query: ({ walletId, fee }) => ({
-        command: 'pwAbsorbRewards',
-        service: Wallet,
-        args: [walletId, fee],
-      }),
+    pwAbsorbRewards: mutation(build, WalletService, 'pwAbsorbRewards', {
       invalidatesTags: [
         { type: 'Transactions', id: 'LIST' },
         { type: 'PlotNFT', id: 'LIST' },
       ],
     }),
 
-    pwJoinPool: build.mutation<
-      any,
-      {
-        walletId: number;
-        poolUrl: string;
-        relativeLockHeight: number;
-        targetPuzzleHash?: string;
-        fee?: string;
-      }
-    >({
-      query: ({
-        walletId,
-        poolUrl,
-        relativeLockHeight,
-        targetPuzzleHash,
-        fee,
-      }) => ({
-        command: 'pwJoinPool',
-        service: Wallet,
-        args: [walletId, poolUrl, relativeLockHeight, targetPuzzleHash, fee],
-      }),
+    pwJoinPool: mutation(build, WalletService, 'pwJoinPool', {
       invalidatesTags: [
         { type: 'Transactions', id: 'LIST' },
         { type: 'PlotNFT', id: 'LIST' },
       ],
     }),
 
-    pwSelfPool: build.mutation<
-      any,
-      {
-        walletId: number;
-        fee?: string;
-      }
-    >({
-      query: ({ walletId, fee }) => ({
-        command: 'pwSelfPool',
-        service: Wallet,
-        args: [walletId, fee],
-      }),
+    pwSelfPool: mutation(build, WalletService, 'pwSelfPool', {
       invalidatesTags: [
         { type: 'Transactions', id: 'LIST' },
         { type: 'PlotNFT', id: 'LIST' },
       ],
     }),
 
-    createNewWallet: build.mutation<
-      any,
-      {
-        walletType: 'pool_wallet' | 'rl_wallet' | 'did_wallet' | 'cat_wallet';
-        options?: Object;
-      }
-    >({
-      query: ({ walletType, options }) => ({
-        command: 'createNewWallet',
-        service: Wallet,
-        args: [walletType, options],
-      }),
+    createNewWallet: mutation(build, WalletService, 'createNewWallet', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'DIDWallet', id: 'LIST' },
       ],
     }),
 
-    deleteUnconfirmedTransactions: build.mutation<
-      any,
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'deleteUnconfirmedTransactions',
-        service: Wallet,
-        args: [walletId],
-      }),
+    deleteUnconfirmedTransactions: mutation(build, WalletService, 'deleteUnconfirmedTransactions', {
       invalidatesTags: (_result, _error, { walletId }) => [
         { type: 'Transactions', id: 'LIST' },
         { type: 'TransactionCount', id: walletId },
       ],
     }),
 
-    getWalletBalance: build.query<
-      {
-        confirmedWalletBalance: number;
-        maxSendAmount: number;
-        pendingChange: number;
-        pendingCoinRemovalCount: number;
-        spendableBalance: number;
-        unconfirmedWalletBalance: number;
-        unspentCoinCount: number;
-        walletId: number;
-        pendingBalance: BigNumber;
-        pendingTotalBalance: BigNumber;
-      },
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'getWalletBalance',
-        service: Wallet,
-        args: [walletId],
-      }),
+    getWalletBalance: query(build, WalletService, 'getWalletBalance', {
       transformResponse: (response) => {
         const {
           walletBalance,
           walletBalance: { confirmedWalletBalance, unconfirmedWalletBalance },
         } = response;
 
-        const pendingBalance = new BigNumber(unconfirmedWalletBalance).minus(
-          confirmedWalletBalance
-        );
-        const pendingTotalBalance = new BigNumber(confirmedWalletBalance).plus(
-          pendingBalance
-        );
+        const pendingBalance = new BigNumber(unconfirmedWalletBalance).minus(confirmedWalletBalance);
+        const pendingTotalBalance = new BigNumber(confirmedWalletBalance).plus(pendingBalance);
 
         return {
           ...walletBalance,
@@ -371,54 +230,51 @@ export const walletApi = apiWithTag.injectEndpoints({
           pendingTotalBalance,
         };
       },
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onCoinAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWalletBalance,
+          service: WalletService,
+          endpoint: 'getWalletBalance',
         },
         {
           command: 'onCoinRemoved',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWalletBalance,
+          service: WalletService,
+          endpoint: 'getWalletBalance',
         },
         {
           command: 'onPendingTransaction',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWalletBalance,
+          service: WalletService,
+          endpoint: 'getWalletBalance',
         },
         {
           command: 'onOfferAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWalletBalance,
+          service: WalletService,
+          endpoint: 'getWalletBalance',
         },
         {
           command: 'onOfferUpdated',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWalletBalance,
+          service: WalletService,
+          endpoint: 'getWalletBalance',
         },
       ]),
     }),
 
-    getFarmedAmount: build.query<any, undefined>({
-      query: () => ({
-        command: 'getFarmedAmount',
-        service: Wallet,
-      }),
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+    getFarmedAmount: query(build, WalletService, 'getFarmedAmount', {
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onCoinAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getFarmedAmount,
+          service: WalletService,
+          endpoint: 'getFarmedAmount',
         },
         {
           command: 'onCoinRemoved',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getFarmedAmount,
+          service: WalletService,
+          endpoint: 'getFarmedAmount',
         },
       ]),
     }),
 
+    // TODO refactor
     sendTransaction: build.mutation<
       any,
       {
@@ -426,15 +282,12 @@ export const walletApi = apiWithTag.injectEndpoints({
         amount: string;
         fee: string;
         address: string;
+        memos?: string[];
         waitForConfirmation?: boolean;
       }
     >({
       async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse:
-          | {
-              data: Function;
-            }
-          | undefined;
+        let subscribeResponse: any;
 
         function unsubscribe() {
           if (subscribeResponse) {
@@ -444,9 +297,10 @@ export const walletApi = apiWithTag.injectEndpoints({
         }
 
         try {
-          const { walletId, amount, fee, address, waitForConfirmation } = args;
+          const { waitForConfirmation, ...restArgs } = args;
 
           return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
             data: await new Promise(async (resolve, reject) => {
               const updatedTransactions: Transaction[] = [];
               let transactionName: string;
@@ -465,17 +319,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                     return false;
                   }
 
-                  const validSentTo = trx.sentTo.find(
-                    (record: [string, number, string | null]) => {
-                      const [, , error] = record;
+                  const validSentTo = trx.sentTo.find((record) => {
+                    const [, , error] = record;
 
-                      if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
-                        return false;
-                      }
-
-                      return true;
+                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
+                      return false;
                     }
-                  );
+
+                    return true;
+                  });
 
                   return !!validSentTo;
                 });
@@ -494,7 +346,7 @@ export const walletApi = apiWithTag.injectEndpoints({
                 subscribeResponse = await baseQuery(
                   {
                     command: 'onTransactionUpdate',
-                    service: Wallet,
+                    service: WalletService,
                     args: [
                       (data: any) => {
                         const {
@@ -506,16 +358,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                       },
                     ],
                   },
-                  queryApi,
-                  {}
+                  queryApi
                 );
               }
 
               // make transaction
               const { data: sendTransactionData, error } = await fetchWithBQ({
                 command: 'sendTransaction',
-                service: Wallet,
-                args: [walletId, amount, fee, address],
+                service: WalletService,
+                args: restArgs,
               });
 
               if (error) {
@@ -539,8 +390,8 @@ export const walletApi = apiWithTag.injectEndpoints({
               processUpdates();
             }),
           };
-        } catch (error: any) {
-          console.log('error trx', error);
+        } catch (error) {
+          console.error('error trx', error);
           return {
             error,
           };
@@ -551,60 +402,19 @@ export const walletApi = apiWithTag.injectEndpoints({
       invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
     }),
 
-    generateMnemonic: build.mutation<string[], undefined>({
-      query: () => ({
-        command: 'generateMnemonic',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.mnemonic,
+    generateMnemonic: mutation(build, WalletService, 'generateMnemonic', {
+      transformResponse: (response) => response.mnemonic,
     }),
 
-    getPublicKeys: build.query<number[], undefined>({
-      query: () => ({
-        command: 'getPublicKeys',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.publicKeyFingerprints,
+    getPublicKeys: query(build, WalletService, 'getPublicKeys', {
+      transformResponse: (response) => response.publicKeyFingerprints,
       providesTags: (keys) =>
         keys
-          ? [
-              ...keys.map((key) => ({ type: 'Keys', id: key } as const)),
-              { type: 'Keys', id: 'LIST' },
-            ]
+          ? [...keys.map((key) => ({ type: 'Keys', id: key } as const)), { type: 'Keys', id: 'LIST' }]
           : [{ type: 'Keys', id: 'LIST' }],
     }),
 
-    addKey: build.mutation<
-      number,
-      {
-        mnemonic: string[];
-        type: 'new_wallet' | 'skip' | 'restore_backup';
-        filePath?: string;
-      }
-    >({
-      query: ({ mnemonic, type, filePath }) => ({
-        command: 'addKey',
-        service: Wallet,
-        args: [mnemonic, type, filePath],
-      }),
-      transformResponse: (response: any) => response?.fingerprint,
-      invalidatesTags: [
-        { type: 'Keys', id: 'LIST' },
-        { type: 'DaemonKey', id: 'LIST' },
-      ],
-    }),
-
-    deleteKey: build.mutation<
-      any,
-      {
-        fingerprint: number;
-      }
-    >({
-      query: ({ fingerprint }) => ({
-        command: 'deleteKey',
-        service: Wallet,
-        args: [fingerprint],
-      }),
+    deleteKey: mutation(build, WalletService, 'deleteKey', {
       invalidatesTags: (_result, _error, { fingerprint }) => [
         { type: 'Keys', id: fingerprint },
         { type: 'Keys', id: 'LIST' },
@@ -613,220 +423,70 @@ export const walletApi = apiWithTag.injectEndpoints({
       ],
     }),
 
-    checkDeleteKey: build.mutation<
-      {
-        fingerprint: number;
-        success: boolean;
-        usedForFarmerRewards: boolean;
-        usedForPoolRewards: boolean;
-        walletBalance: boolean;
-      },
-      {
-        fingerprint: string;
-      }
-    >({
-      query: ({ fingerprint }) => ({
-        command: 'checkDeleteKey',
-        service: Wallet,
-        args: [fingerprint],
-      }),
-    }),
+    checkDeleteKey: mutation(build, WalletService, 'checkDeleteKey'),
 
-    deleteAllKeys: build.mutation<any, undefined>({
-      query: () => ({
-        command: 'deleteAllKeys',
-        service: Wallet,
-      }),
+    deleteAllKeys: mutation(build, WalletService, 'deleteAllKeys', {
       invalidatesTags: [
         { type: 'Keys', id: 'LIST' },
         { type: 'DaemonKey', id: 'LIST' },
       ],
     }),
 
-    logIn: build.mutation<
-      any,
-      {
-        fingerprint: string;
-        type?: 'normal' | 'skip' | 'restore_backup';
-        host?: string;
-        filePath?: string;
-      }
-    >({
-      query: ({ fingerprint, type, filePath, host }) => ({
-        command: 'logIn',
-        service: Wallet,
-        args: [fingerprint, type, filePath, host],
-      }),
-      invalidatesTags: ['LoggedInFingerprint'],
+    logIn: mutation(build, WalletService, 'logIn', {
+      invalidatesTags: ['LoggedInFingerprint', 'Address', 'Wallets', 'Transactions', 'WalletBalance', 'Notification'],
     }),
 
-    logInAndSkipImport: build.mutation<
-      any,
-      {
-        fingerprint: string;
-        host?: string;
-      }
-    >({
-      query: ({ fingerprint, host }) => ({
-        command: 'logInAndSkipImport',
-        service: Wallet,
-        args: [fingerprint, host],
-      }),
-      invalidatesTags: ['LoggedInFingerprint'],
+    getPrivateKey: query(build, WalletService, 'getPrivateKey', {
+      transformResponse: (response) => response.privateKey,
     }),
 
-    logInAndImportBackup: build.mutation<
-      any,
-      {
-        fingerprint: string;
-        filePath: string;
-        host?: string;
-      }
-    >({
-      query: ({ fingerprint, filePath, host }) => ({
-        command: 'logInAndImportBackup',
-        service: Wallet,
-        args: [fingerprint, filePath, host],
-      }),
-    }),
-
-    getBackupInfo: build.query<
-      any,
-      {
-        filePath: string;
-        options: { fingerprint: string } | { words: string };
-      }
-    >({
-      query: ({ filePath, options }) => ({
-        command: 'getBackupInfo',
-        service: Wallet,
-        args: [filePath, options],
-      }),
-    }),
-
-    getBackupInfoByFingerprint: build.query<
-      any,
-      {
-        filePath: string;
-        fingerprint: string;
-      }
-    >({
-      query: ({ filePath, fingerprint }) => ({
-        command: 'getBackupInfoByFingerprint',
-        service: Wallet,
-        args: [filePath, fingerprint],
-      }),
-    }),
-
-    getBackupInfoByWords: build.query<
-      any,
-      {
-        filePath: string;
-        words: string;
-      }
-    >({
-      query: ({ filePath, words }) => ({
-        command: 'getBackupInfoByWords',
-        service: Wallet,
-        args: [filePath, words],
-      }),
-    }),
-
-    getPrivateKey: build.query<
-      {
-        farmerPk: string;
-        fingerprint: number;
-        pk: string;
-        poolPk: string;
-        seed?: string;
-        sk: string;
-      },
-      {
-        fingerprint: string;
-      }
-    >({
-      query: ({ fingerprint }) => ({
-        command: 'getPrivateKey',
-        service: Wallet,
-        args: [fingerprint],
-      }),
-      transformResponse: (response: any) => response?.privateKey,
-    }),
-
-    getTransactions: build.query<
-      Transaction[],
-      {
-        walletId: number;
-        start?: number;
-        end?: number;
-        sortKey?: 'CONFIRMED_AT_HEIGHT' | 'RELEVANCE';
-        reverse?: boolean;
-      }
-    >({
-      query: ({ walletId, start, end, sortKey, reverse }) => ({
-        command: 'getTransactions',
-        service: Wallet,
-        args: [walletId, start, end, sortKey, reverse],
-      }),
-      transformResponse: (response: any) => response?.transactions,
+    getTransactions: query(build, WalletService, 'getTransactions', {
+      transformResponse: (response) => response.transactions,
       providesTags(result) {
         return result
           ? [
-              ...result.map(
-                ({ name }) => ({ type: 'Transactions', id: name } as const)
-              ),
+              ...result.map(({ name }) => ({ type: 'Transactions', id: name } as const)),
               { type: 'Transactions', id: 'LIST' },
             ]
           : [{ type: 'Transactions', id: 'LIST' }];
       },
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onCoinAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactions,
+          service: WalletService,
+          endpoint: 'getTransactions',
         },
         {
           command: 'onCoinRemoved',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactions,
+          service: WalletService,
+          endpoint: 'getTransactions',
         },
         {
           command: 'onPendingTransaction',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactions,
+          service: WalletService,
+          endpoint: 'getTransactions',
         },
       ]),
     }),
 
-    getTransactionsCount: build.query<
-      number,
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'getTransactionsCount',
-        service: Wallet,
-        args: [walletId],
-      }),
-      transformResponse: (response: any) => response?.count,
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'TransactionCount', id: walletId }] : [],
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+    getTransactionsCount: query(build, WalletService, 'getTransactionsCount', {
+      transformResponse: (response) => response.count,
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'TransactionCount', id: walletId }] : []),
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onCoinAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactionsCount,
+          service: WalletService,
+          endpoint: 'getTransactionsCount',
         },
         {
           command: 'onCoinRemoved',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactionsCount,
+          service: WalletService,
+          endpoint: 'getTransactionsCount',
         },
         {
           command: 'onPendingTransaction',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getTransactionsCount,
+          service: WalletService,
+          endpoint: 'getTransactionsCount',
         },
       ]),
     }),
@@ -839,140 +499,85 @@ export const walletApi = apiWithTag.injectEndpoints({
     >({
       query: ({ walletId }) => ({
         command: 'getNextAddress',
-        service: Wallet,
-        args: [walletId, false],
+        service: WalletService,
+        args: { walletId, newAddress: false },
       }),
-      transformResponse: (response: any) => response?.address,
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'Address', id: walletId }] : [],
+      transformResponse: (response) => response.address,
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'Address', id: walletId }] : []),
     }),
 
-    getNextAddress: build.mutation<
-      string,
-      {
-        walletId: number;
-        newAddress: boolean;
-      }
-    >({
-      query: ({ walletId, newAddress }) => ({
-        command: 'getNextAddress',
-        service: Wallet,
-        args: [walletId, newAddress],
-      }),
-      transformResponse: (response: any) => response?.address,
-      invalidatesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'Address', id: walletId }] : [],
+    getNextAddress: mutation(build, WalletService, 'getNextAddress', {
+      transformResponse: (response) => response.address,
+      invalidatesTags: (result, _error, { walletId }) => (result ? [{ type: 'Address', id: walletId }] : []),
     }),
 
-    farmBlock: build.mutation<
-      any,
-      {
-        address: string;
-      }
-    >({
-      query: ({ address }) => ({
-        command: 'farmBlock',
-        service: Wallet,
-        args: [address],
-      }),
-    }),
+    farmBlock: mutation(build, WalletService, 'farmBlock'),
 
-    getHeightInfo: build.query<number, undefined>({
-      query: () => ({
-        command: 'getHeightInfo',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.height,
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+    getTimestampForHeight: query(build, WalletService, 'getTimestampForHeight'),
+
+    getHeightInfo: query(build, WalletService, 'getHeightInfo', {
+      transformResponse: (response) => response.height,
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onSyncChanged',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getHeightInfo,
+          service: WalletService,
+          endpoint: 'getHeightInfo',
         },
         {
           command: 'onNewBlock',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getHeightInfo,
+          service: WalletService,
+          endpoint: 'getHeightInfo',
         },
       ]),
     }),
 
-    getCurrentDerivationIndex: build.query<number, undefined>({
-      query: () => ({
-        command: 'getCurrentDerivationIndex',
-        service: Wallet,
-      }),
+    getCurrentDerivationIndex: query(build, WalletService, 'getCurrentDerivationIndex', {
       providesTags: (result) => (result ? [{ type: 'DerivationIndex' }] : []),
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onNewDerivationIndex',
-          service: Wallet,
+          service: WalletService,
           onUpdate: (draft, data) => {
             draft.index = data?.additionalData?.index;
           },
         },
       ]),
     }),
-    extendDerivationIndex: build.mutation<
-      undefined,
-      {
-        index: number;
-      }
-    >({
-      query: ({ index }) => ({
-        command: 'extendDerivationIndex',
-        service: Wallet,
-        args: [index],
-      }),
+
+    extendDerivationIndex: mutation(build, WalletService, 'extendDerivationIndex', {
       invalidatesTags: [{ type: 'DerivationIndex' }],
     }),
 
-    getNetworkInfo: build.query<any, undefined>({
-      query: () => ({
-        command: 'getNetworkInfo',
-        service: Wallet,
-      }),
-    }),
+    getNetworkInfo: query(build, WalletService, 'getNetworkInfo'),
 
-    getSyncStatus: build.query<any, undefined>({
-      query: () => ({
-        command: 'getSyncStatus',
-        service: Wallet,
-      }),
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+    getSyncStatus: query(build, WalletService, 'getSyncStatus', {
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onSyncChanged',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getSyncStatus,
+          service: WalletService,
+          endpoint: 'getSyncStatus',
         },
         {
           command: 'onNewBlock',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getSyncStatus,
+          service: WalletService,
+          endpoint: 'getSyncStatus',
         },
       ]),
     }),
 
-    getWalletConnections: build.query<WalletConnections[], undefined>({
-      query: () => ({
-        command: 'getConnections',
-        service: Wallet,
-      }),
-      transformResponse: (response: any) => response?.connections,
+    getWalletConnections: query(build, WalletService, 'getConnections', {
+      transformResponse: (response) => response.connections,
       providesTags: (connections) =>
         connections
           ? [
-              ...connections.map(
-                ({ nodeId }) =>
-                  ({ type: 'WalletConnections', id: nodeId } as const)
-              ),
+              ...connections.map(({ nodeId }) => ({ type: 'WalletConnections', id: nodeId } as const)),
               { type: 'WalletConnections', id: 'LIST' },
             ]
           : [{ type: 'WalletConnections', id: 'LIST' }],
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onConnections',
-          service: Wallet,
+          service: WalletService,
           onUpdate: (draft, data) => {
             // empty base array
             draft.splice(0);
@@ -983,247 +588,72 @@ export const walletApi = apiWithTag.injectEndpoints({
         },
       ]),
     }),
-    openWalletConnection: build.mutation<
-      WalletConnections,
-      {
-        host: string;
-        port: number;
-      }
-    >({
-      query: ({ host, port }) => ({
-        command: 'openConnection',
-        service: Wallet,
-        args: [host, port],
-      }),
-      invalidatesTags: [{ type: 'WalletConnections', id: 'LIST' }],
-    }),
-    closeWalletConnection: build.mutation<
-      WalletConnections,
-      {
-        nodeId: string;
-      }
-    >({
-      query: ({ nodeId }) => ({
-        command: 'closeConnection',
-        service: Wallet,
-        args: [nodeId],
-      }),
-      invalidatesTags: (_result, _error, { nodeId }) => [
-        { type: 'WalletConnections', id: 'LIST' },
-        { type: 'WalletConnections', id: nodeId },
-      ],
-    }),
-    createBackup: build.mutation<
-      any,
-      {
-        filePath: string;
-      }
-    >({
-      query: ({ filePath }) => ({
-        command: 'createBackup',
-        service: Wallet,
-        args: [filePath],
-      }),
-    }),
 
     // Offers
-    getAllOffers: build.query<
-      OfferTradeRecord[],
-      {
-        start?: number;
-        end?: number;
-        sortKey?: 'CONFIRMED_AT_HEIGHT' | 'RELEVANCE';
-        reverse?: boolean;
-        includeMyOffers?: boolean;
-        includeTakenOffers?: boolean;
-      }
-    >({
-      query: ({
-        start,
-        end,
-        sortKey,
-        reverse,
-        includeMyOffers,
-        includeTakenOffers,
-      }) => ({
-        command: 'getAllOffers',
-        service: Wallet,
-        args: [
-          start,
-          end,
-          sortKey,
-          reverse,
-          includeMyOffers,
-          includeTakenOffers,
-        ],
-      }),
-      transformResponse: (response: any) => {
-        if (!response?.offers) {
-          return response?.tradeRecords;
+
+    getAllOffers: query(build, WalletService, 'getAllOffers', {
+      transformResponse: (response) => {
+        if (!response.offers) {
+          return response.tradeRecords;
         }
-        return response?.tradeRecords.map(
-          (tradeRecord: OfferTradeRecord, index: number) => ({
-            ...tradeRecord,
-            _offerData: response?.offers?.[index],
-          })
-        );
+        return response.tradeRecords.map((tradeRecord, index) => ({
+          ...tradeRecord,
+          _offerData: response.offers?.[index],
+        }));
       },
       providesTags(result) {
         return result
           ? [
-              ...result.map(
-                ({ tradeId }) =>
-                  ({ type: 'OfferTradeRecord', id: tradeId } as const)
-              ),
+              ...result.map(({ tradeId }) => ({ type: 'OfferTradeRecord', id: tradeId } as const)),
               { type: 'OfferTradeRecord', id: 'LIST' },
             ]
           : [{ type: 'OfferTradeRecord', id: 'LIST' }];
       },
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onCoinAdded',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getAllOffers,
+          service: WalletService,
+          endpoint: 'getAllOffers',
         },
         {
           command: 'onCoinRemoved',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getAllOffers,
+          service: WalletService,
+          endpoint: 'getAllOffers',
         },
         {
           command: 'onPendingTransaction',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getAllOffers,
+          service: WalletService,
+          endpoint: 'getAllOffers',
         },
       ]),
     }),
 
-    getOffersCount: build.query<OfferCounts, undefined>({
-      query: () => ({
-        command: 'getOffersCount',
-        service: Wallet,
-      }),
+    getOffersCount: query(build, WalletService, 'getOffersCount', {
       providesTags: ['OfferCounts'],
     }),
 
-    createOfferForIds: build.mutation<
-      any,
-      {
-        walletIdsAndAmounts: { [key: string]: number };
-        feeInMojos: number;
-        driverDict: any;
-        validateOnly?: boolean;
-        disableJSONFormatting?: boolean;
-      }
-    >({
-      query: ({
-        walletIdsAndAmounts,
-        feeInMojos,
-        driverDict,
-        validateOnly,
-        disableJSONFormatting,
-      }) => ({
-        command: 'createOfferForIds',
-        service: Wallet,
-        args: [
-          walletIdsAndAmounts,
-          feeInMojos,
-          driverDict,
-          validateOnly,
-          disableJSONFormatting,
-        ],
-      }),
-      invalidatesTags: [
-        { type: 'OfferTradeRecord', id: 'LIST' },
-        'OfferCounts',
-      ],
+    createOfferForIds: mutation(build, WalletService, 'createOfferForIds', {
+      invalidatesTags: [{ type: 'OfferTradeRecord', id: 'LIST' }, 'OfferCounts'],
     }),
 
-    cancelOffer: build.mutation<
-      any,
-      {
-        tradeId: string;
-        secure: boolean;
-        fee: number | string;
-      }
-    >({
-      query: ({ tradeId, secure, fee }) => ({
-        command: 'cancelOffer',
-        service: Wallet,
-        args: [tradeId, secure, fee],
-      }),
-      invalidatesTags: (result, error, { tradeId }) => [
-        { type: 'OfferTradeRecord', id: tradeId },
-      ],
+    cancelOffer: mutation(build, WalletService, 'cancelOffer', {
+      invalidatesTags: (_result, _error, { tradeId }) => [{ type: 'OfferTradeRecord', id: tradeId }],
     }),
 
-    checkOfferValidity: build.mutation<any, string>({
-      query: (offerData: string) => ({
-        command: 'checkOfferValidity',
-        service: Wallet,
-        args: [offerData],
-      }),
+    checkOfferValidity: mutation(build, WalletService, 'checkOfferValidity'),
+
+    takeOffer: mutation(build, WalletService, 'takeOffer', {
+      invalidatesTags: [{ type: 'OfferTradeRecord', id: 'LIST' }, 'OfferCounts'],
     }),
 
-    takeOffer: build.mutation<
-      any,
-      {
-        offer: string;
-        fee: number | string;
-      }
-    >({
-      query: ({ offer, fee }) => ({
-        command: 'takeOffer',
-        service: Wallet,
-        args: [offer, fee],
-      }),
-      invalidatesTags: [
-        { type: 'OfferTradeRecord', id: 'LIST' },
-        'OfferCounts',
-      ],
-    }),
+    getOfferSummary: mutation(build, WalletService, 'getOfferSummary'),
 
-    getOfferSummary: build.mutation<any, string>({
-      query: (offerData: string) => ({
-        command: 'getOfferSummary',
-        service: Wallet,
-        args: [offerData],
-      }),
-    }),
+    getOfferData: mutation(build, WalletService, 'getOfferData'),
 
-    getOfferData: build.mutation<any, string>({
-      query: (offerId: string) => ({
-        command: 'getOfferData',
-        service: Wallet,
-        args: [offerId],
-      }),
-    }),
-
-    getOfferRecord: build.mutation<any, OfferTradeRecord>({
-      query: (offerId: string) => ({
-        command: 'getOfferRecord',
-        service: Wallet,
-        args: [offerId],
-      }),
-    }),
+    getOfferRecord: mutation(build, WalletService, 'getOfferRecord'),
 
     // Pool
-    createNewPoolWallet: build.mutation<
-      {
-        transaction: Transaction;
-        p2SingletonPuzzleHash: string;
-      },
-      {
-        initialTargetState: Object;
-        fee?: string;
-        host?: string;
-      }
-    >({
-      query: ({ initialTargetState, fee, host }) => ({
-        command: 'createNewWallet',
-        service: Pool,
-        args: [initialTargetState, fee, host],
-      }),
+    createNewPoolWallet: mutation(build, Pool, 'createNewPoolWallet', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'Transactions', id: 'LIST' },
@@ -1231,123 +661,53 @@ export const walletApi = apiWithTag.injectEndpoints({
     }),
 
     // CAT
-    createNewCATWallet: build.mutation<
-      any,
-      {
-        amount: string;
-        fee: string;
-        host?: string;
-      }
-    >({
-      query: ({ amount, fee, host }) => ({
-        command: 'createNewWallet',
-        service: CAT,
-        args: [amount, fee, host],
-      }),
+    createNewCATWallet: mutation(build, CAT, 'createNewCatWallet', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'Transactions', id: 'LIST' },
       ],
     }),
 
-    createCATWalletForExisting: build.mutation<
-      any,
-      {
-        assetId: string;
-        fee: string;
-        host?: string;
-      }
-    >({
-      query: ({ assetId, fee, host }) => ({
-        command: 'createWalletForExisting',
-        service: CAT,
-        args: [assetId, fee, host],
-      }),
+    createCATWalletForExisting: mutation(build, CAT, 'createWalletForExisting', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'Transactions', id: 'LIST' },
       ],
     }),
 
-    getCATAssetId: build.query<
-      string,
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'getAssetId',
-        service: CAT,
-        args: [walletId],
-      }),
-      transformResponse: (response: any) => response?.assetId,
+    getCATWalletInfo: query(build, CAT, 'getWalletIdAndName', {
+      providesTags: (result, _error, { assetId }) => (result ? [{ type: 'CATWalletInfo', id: assetId }] : []),
     }),
 
-    getCatList: build.query<CATToken[], undefined>({
-      query: () => ({
-        command: 'getCatList',
-        service: CAT,
-      }),
-      transformResponse: (response: any) => response?.catList,
+    getCATAssetId: query(build, CAT, 'getAssetId', {
+      transformResponse: (response) => response.assetId,
+    }),
+
+    getCatList: query(build, CAT, 'getCatList', {
+      transformResponse: (response) => response.catList,
       providesTags(result) {
         return result
-          ? [
-              ...result.map(({ id }) => ({ type: 'CATs', id } as const)),
-              { type: 'CATs', id: 'LIST' },
-            ]
+          ? [...result.map(({ assetId }) => ({ type: 'CATs', id: assetId } as const)), { type: 'CATs', id: 'LIST' }]
           : [{ type: 'CATs', id: 'LIST' }];
       },
     }),
 
-    getCATName: build.query<
-      string,
-      {
-        walletId: number;
-      }
-    >({
-      query: ({ walletId }) => ({
-        command: 'getName',
-        service: CAT,
-        args: [walletId],
-      }),
-      transformResponse: (response: any) => response?.name,
+    getCATName: query(build, CAT, 'getName', {
+      transformResponse: (response) => response.name,
     }),
 
-    setCATName: build.mutation<
-      any,
-      {
-        walletId: number;
-        name: string;
-      }
-    >({
-      query: ({ walletId, name }) => ({
-        command: 'setName',
-        service: CAT,
-        args: [walletId, name],
-      }),
+    setCATName: mutation(build, CAT, 'setName', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'CATs', id: 'LIST' },
       ],
     }),
 
-    getStrayCats: build.query<
-      {
-        assetId: string;
-        name: string;
-        firstSeenHeight: number;
-        senderPuzzleHash: string;
-        inTransaction: boolean;
-      }[],
-      undefined
-    >({
-      query: () => ({
-        command: 'getStrayCats',
-        service: CAT,
-      }),
-      transformResponse: (response: any) => response?.strayCats,
+    getStrayCats: query(build, CAT, 'getStrayCats', {
+      transformResponse: (response) => response.strayCats,
     }),
 
+    // TODO refactor
     spendCAT: build.mutation<
       any,
       {
@@ -1360,35 +720,27 @@ export const walletApi = apiWithTag.injectEndpoints({
       }
     >({
       async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse:
-          | {
-              data: Function;
-            }
-          | undefined;
+        let subscribeResponse: any;
 
         function unsubscribe() {
           if (subscribeResponse) {
-            // console.log('Unsubscribing from tx_updates');
             subscribeResponse.data();
             subscribeResponse = undefined;
           }
         }
 
         try {
-          const { walletId, address, amount, fee, memos, waitForConfirmation } =
-            args;
+          const { waitForConfirmation, ...restArgs } = args;
 
           return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
             data: await new Promise(async (resolve, reject) => {
               const updatedTransactions: Transaction[] = [];
               let transactionName: string;
 
               function processUpdates() {
                 if (!transactionName) {
-                  console.log(
-                    `Transaction name is not defined`,
-                    updatedTransactions
-                  );
+                  console.warn(`Transaction name is not defined`, updatedTransactions);
                   return;
                 }
 
@@ -1397,13 +749,10 @@ export const walletApi = apiWithTag.injectEndpoints({
                 );
 
                 if (transaction) {
-                  // console.log('we found transaction with all data hurai');
                   resolve({
                     transaction,
                     transactionId: transaction.name,
                   });
-                } else {
-                  // console.log('we do not have transaction in the list with data', updatedTransactions);
                 }
               }
 
@@ -1413,129 +762,29 @@ export const walletApi = apiWithTag.injectEndpoints({
                 subscribeResponse = await baseQuery(
                   {
                     command: 'onTransactionUpdate',
-                    service: Wallet,
+                    service: WalletService,
                     args: [
                       (data: any) => {
                         const {
                           additionalData: { transaction },
                         } = data;
 
-                        // console.log('update received');
-
                         updatedTransactions.push(transaction);
                         processUpdates();
                       },
                     ],
                   },
-                  queryApi,
-                  {}
+                  queryApi
                 );
               }
 
               // make transaction
-              // console.log('sending transaction');
-              const {
-                data: sendTransactionData,
-                error,
-                ...rest
-              } = await fetchWithBQ({
-                command: 'spend',
-                service: CAT,
-                args: [walletId, address, amount, fee, memos],
-              });
 
-              // console.log('response', sendTransactionData, error, rest);
-
-              if (error) {
-                reject(error);
-                return;
-              }
-
-              if (!waitForConfirmation) {
-                resolve(sendTransactionData);
-                return;
-              }
-
-              const { transaction } = sendTransactionData;
-              if (!transaction) {
-                reject(new Error('Transaction is not present in response'));
-              }
-
-              transactionName = transaction.name;
-              updatedTransactions.push(transaction);
-              processUpdates();
-            }),
-          };
-        } catch (error: any) {
-          return {
-            error,
-          };
-        } finally {
-          unsubscribe();
-        }
-
-        /*
-        let subscribeResponse: {
-          data: Function;
-        } | undefined;
-
-        function unsubscribe() {
-          if (subscribeResponse) {
-            subscribeResponse.data();
-            subscribeResponse = undefined;
-          }
-        }
-
-        try {
-          const {
-            walletId,
-            address,
-            amount,
-            fee,
-            memos,
-            waitForConfirmation,
-          } = args;
-
-          return {
-            data: new Promise(async (resolve, reject) => {
-              const updatedTransactions: Transaction[] = [];
-              let transactionName: string;
-
-              function processUpdates() {
-                if (!transactionName) {
-                  return;
-                }
-
-                const transaction = updatedTransactions.find(
-                  (trx) => trx.name === transactionName && !!trx?.sentTo?.length,
-                );
-
-                if (transaction) {
-                  resolve({
-                    transaction,
-                    transactionId: transaction.name,
-                  });
-                }
-              }
-
-              // bind all changes related to transactions
-              if (waitForConfirmation) {
-                subscribeResponse = await baseQuery({
-                  command: 'onTransactionUpdate',
-                  args: [(data: any) => {
-                    const { additionalData: { transaction } } = data;
-
-                    updatedTransactions.push(transaction);
-                    processUpdates();
-                  }],
-                }, queryApi, {});
-              }
-
-              // make transaction
               const { data: sendTransactionData, error } = await fetchWithBQ({
                 command: 'spend',
                 service: CAT,
-                args: [walletId, address, amount, fee, memos],
+
+                args: restArgs,
               });
 
               if (error) {
@@ -1558,42 +807,36 @@ export const walletApi = apiWithTag.injectEndpoints({
               processUpdates();
             }),
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
         } finally {
           unsubscribe();
         }
-        */
       },
       invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
     }),
 
+    // TODO refactor
     addCATToken: build.mutation<
       any,
       {
         assetId: string;
         name: string;
         fee: string;
-        host?: string;
       }
     >({
-      async queryFn(
-        { assetId, name, fee, host },
-        _queryApi,
-        _extraOptions,
-        fetchWithBQ
-      ) {
+      async queryFn({ name, ...restArgs }, _queryApi, _extraOptions, fetchWithBQ) {
         try {
           const { data, error } = await fetchWithBQ({
             command: 'createWalletForExisting',
             service: CAT,
-            args: [assetId, fee, host],
+            args: restArgs,
           });
 
           if (error) {
-            throw error;
+            throw error as Error;
           }
 
           const walletId = data?.walletId;
@@ -1604,13 +847,13 @@ export const walletApi = apiWithTag.injectEndpoints({
           await fetchWithBQ({
             command: 'setName',
             service: CAT,
-            args: [walletId, name],
+            args: { walletId, name },
           });
 
           return {
             data: walletId,
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
@@ -1623,29 +866,28 @@ export const walletApi = apiWithTag.injectEndpoints({
     }),
 
     // PlotNFTs
+
+    // TODO refactor
+
     getPlotNFTs: build.query<Object, undefined>({
       async queryFn(_args, { signal }, _extraOptions, fetchWithBQ) {
         try {
-          const [wallets, poolStates] = await Promise.all<
-            Wallet[],
-            PoolState[]
-          >([
+          const [wallets, poolStates] = await Promise.all([
             (async () => {
               const { data, error } = await fetchWithBQ({
                 command: 'getWallets',
-                service: Wallet,
+                service: WalletService,
               });
 
               if (error) {
-                throw error;
+                throw error as Error;
               }
 
-              const wallets = data?.wallets;
-              if (!wallets) {
+              if (!data?.wallets) {
                 throw new Error('List of the wallets is not defined');
               }
 
-              return wallets;
+              return data.wallets;
             })(),
             (async () => {
               const { data, error } = await fetchWithBQ({
@@ -1654,7 +896,7 @@ export const walletApi = apiWithTag.injectEndpoints({
               });
 
               if (error) {
-                throw error;
+                throw error as Error;
               }
 
               const poolState = data?.poolState;
@@ -1671,22 +913,19 @@ export const walletApi = apiWithTag.injectEndpoints({
           }
 
           // filter pool wallets
-          const poolWallets =
-            wallets?.filter(
-              (wallet) => wallet.type === WalletType.POOLING_WALLET
-            ) ?? [];
+          const poolWallets = wallets?.filter((wallet: any) => wallet.type === WalletType.POOLING_WALLET) ?? [];
 
           const [poolWalletStates, walletBalances] = await Promise.all([
-            await Promise.all<PoolWalletStatus>(
-              poolWallets.map(async (wallet) => {
+            await Promise.all(
+              poolWallets.map(async (wallet: any) => {
                 const { data, error } = await fetchWithBQ({
                   command: 'getPwStatus',
-                  service: Wallet,
-                  args: [wallet.id],
+                  service: WalletService,
+                  args: { walletId: wallet.id },
                 });
 
                 if (error) {
-                  throw error;
+                  throw error as Error;
                 }
 
                 return {
@@ -1696,15 +935,15 @@ export const walletApi = apiWithTag.injectEndpoints({
               })
             ),
             await Promise.all<WalletBalance>(
-              poolWallets.map(async (wallet) => {
+              poolWallets.map(async (wallet: any) => {
                 const { data, error } = await fetchWithBQ({
                   command: 'getWalletBalance',
-                  service: Wallet,
-                  args: [wallet.id],
+                  service: WalletService,
+                  args: { walletId: wallet.id },
                 });
 
                 if (error) {
-                  throw error;
+                  throw error as Error;
                 }
 
                 return data?.walletBalance;
@@ -1717,10 +956,10 @@ export const walletApi = apiWithTag.injectEndpoints({
           }
 
           // combine poolState and poolWalletState
-          const nfts: PlotNFT[] = [];
-          const external: PlotNFTExternal[] = [];
+          const nfts: any = [];
+          const external: any = [];
 
-          poolStates.forEach((poolStateItem) => {
+          poolStates.forEach((poolStateItem: any) => {
             const poolWalletStatus = poolWalletStates.find(
               (item) => item.launcherId === poolStateItem.poolConfig.launcherId
             );
@@ -1731,9 +970,7 @@ export const walletApi = apiWithTag.injectEndpoints({
               return;
             }
 
-            const walletBalance = walletBalances.find(
-              (item) => item?.walletId === poolWalletStatus.walletId
-            );
+            const walletBalance = walletBalances.find((item) => item?.walletId === poolWalletStatus.walletId);
 
             if (!walletBalance) {
               external.push({
@@ -1765,21 +1002,8 @@ export const walletApi = apiWithTag.injectEndpoints({
     }),
 
     // DID
-    createNewDIDWallet: build.mutation<
-      any,
-      {
-        amount: string;
-        fee: string;
-        backupDids?: string[];
-        numOfBackupIdsNeeded?: number;
-        host?: string;
-      }
-    >({
-      query: ({ amount, fee, backupDids, numOfBackupIdsNeeded, host }) => ({
-        command: 'createNewWallet',
-        service: DID,
-        args: [amount, fee, backupDids, numOfBackupIdsNeeded, host],
-      }),
+
+    createNewDIDWallet: mutation(build, DID, 'createNewDIDWallet', {
       invalidatesTags: [
         { type: 'Wallets', id: 'LIST' },
         { type: 'DIDWallet', id: 'LIST' },
@@ -1787,28 +1011,11 @@ export const walletApi = apiWithTag.injectEndpoints({
       ],
     }),
 
-    getDIDName: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getDidName',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DIDName', id: walletId }] : [],
+    getDIDName: query(build, DID, 'getDidName', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DIDName', id: walletId }] : []),
     }),
 
-    setDIDName: build.mutation<
-      any,
-      {
-        walletId: number;
-        name: string;
-      }
-    >({
-      query: ({ walletId, name }) => ({
-        command: 'setDIDName',
-        service: DID,
-        args: [walletId, name],
-      }),
+    setDIDName: mutation(build, DID, 'setDIDName', {
       invalidatesTags: (_result, _error, { walletId }) => [
         { type: 'Wallets', id: walletId },
         { type: 'DIDWallet', id: walletId },
@@ -1816,55 +1023,32 @@ export const walletApi = apiWithTag.injectEndpoints({
       ],
     }),
 
-    updateDIDRecoveryIds: build.mutation<
-      any,
-      {
-        walletId: number;
-        newList: string[];
-        numVerificationsRequired: number;
-      }
-    >({
-      query: ({ walletId, newList, numVerificationsRequired }) => ({
-        command: 'updateRecoveryIds',
-        service: DID,
-        args: [walletId, newList, numVerificationsRequired],
-      }),
+    updateDIDRecoveryIds: mutation(build, DID, 'updateRecoveryIds', {
       invalidatesTags: (_result, _error, { walletId }) => [
         { type: 'Wallets', id: walletId },
         { type: 'DIDRecoveryList', id: walletId },
       ],
     }),
 
-    getDIDPubKey: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getPubKey',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DIDPubKey', id: walletId }] : [],
+    getDIDPubKey: query(build, DID, 'getPubKey', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DIDPubKey', id: walletId }] : []),
     }),
 
-    getDID: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getDid',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DID', id: walletId }] : [],
+    getDID: query(build, DID, 'getDid', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DID', id: walletId }] : []),
     }),
 
+    // TODO refactor
     getDIDs: build.query<Wallet[], undefined>({
-      async queryFn(args, _queryApi, _extraOptions, fetchWithBQ) {
+      async queryFn(_args, _queryApi, _extraOptions, fetchWithBQ) {
         try {
           const { data, error } = await fetchWithBQ({
             command: 'getWallets',
-            service: Wallet,
+            service: WalletService,
           });
 
           if (error) {
-            throw error;
+            throw error as Error;
           }
 
           const wallets = data?.wallets;
@@ -1872,24 +1056,22 @@ export const walletApi = apiWithTag.injectEndpoints({
             throw new Error('Wallets are not defined');
           }
 
-          const didWallets = wallets.filter(
-            (wallet) => wallet.type === WalletType.DECENTRALIZED_ID
-          );
+          const didWallets = wallets.filter((wallet: any) => wallet.type === WalletType.DECENTRALIZED_ID);
 
           return {
             data: await Promise.all(
               didWallets.map(async (wallet: Wallet) => {
-                const { data, error } = await fetchWithBQ({
+                const { data: dataLocal, error: errorLocal } = await fetchWithBQ({
                   command: 'getDid',
                   service: DID,
-                  args: [wallet.id],
+                  args: { walletId: wallet.id },
                 });
 
-                if (error) {
-                  throw error;
+                if (errorLocal) {
+                  throw errorLocal as Error;
                 }
 
-                const { myDid } = data;
+                const { myDid } = dataLocal;
 
                 return {
                   ...wallet,
@@ -1898,7 +1080,7 @@ export const walletApi = apiWithTag.injectEndpoints({
               })
             ),
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
@@ -1906,67 +1088,43 @@ export const walletApi = apiWithTag.injectEndpoints({
       },
       providesTags(result) {
         return result
-          ? [
-              ...result.map(({ id }) => ({ type: 'DIDWallet', id } as const)),
-              { type: 'DIDWallet', id: 'LIST' },
-            ]
+          ? [...result.map(({ id }) => ({ type: 'DIDWallet', id } as const)), { type: 'DIDWallet', id: 'LIST' }]
           : [{ type: 'DIDWallet', id: 'LIST' }];
       },
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onWalletCreated',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getWallets,
+          service: WalletService,
+          endpoint: 'getWallets',
         },
       ]),
     }),
 
     // spendDIDRecovery: did_recovery_spend needs an RPC change (attest_filenames -> attest_file_contents)
 
-    getDIDRecoveryList: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getRecoveryList',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DIDRecoveryList', id: walletId }] : [],
+    getDIDRecoveryList: query(build, DID, 'getRecoveryList', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DIDRecoveryList', id: walletId }] : []),
     }),
 
     // createDIDAttest: did_create_attest needs an RPC change (remove filename param, return file contents)
 
-    getDIDInformationNeededForRecovery: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getInformationNeededForRecovery',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DIDRecoveryInfo', id: walletId }] : [],
+    getDIDInformationNeededForRecovery: query(build, DID, 'getInformationNeededForRecovery', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DIDRecoveryInfo', id: walletId }] : []),
     }),
 
-    getDIDCurrentCoinInfo: build.query<any, { walletId: number }>({
-      query: ({ walletId }) => ({
-        command: 'getCurrentCoinInfo',
-        service: DID,
-        args: [walletId],
-      }),
-      providesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'DIDCoinInfo', id: walletId }] : [],
+    getDIDCurrentCoinInfo: query(build, DID, 'getCurrentCoinInfo', {
+      providesTags: (result, _error, { walletId }) => (result ? [{ type: 'DIDCoinInfo', id: walletId }] : []),
+    }),
+
+    getDIDInfo: query(build, DID, 'getDidInfo', {
+      providesTags: (result, _error, { coinOrDIDId }) => (result ? [{ type: 'DIDInfo', id: coinOrDIDId }] : []),
     }),
 
     // createDIDBackup: did_create_backup_file needs an RPC change (remove filename param, return file contents)
 
     // NFTs
-    calculateRoyaltiesForNFTs: build.query<
-      CalculateRoyaltiesResponse,
-      CalculateRoyaltiesRequest
-    >({
-      query: (request) => ({
-        command: 'calculateRoyalties',
-        service: NFT,
-        args: [request],
-      }),
+
+    calculateRoyaltiesForNFTs: query(build, NFT, 'calculateRoyalties', {
       providesTags: ['NFTRoyalties'],
       transformResponse: (response) => {
         // Move royalties to a 'royalties' key to avoid co-mingling with success/error keys
@@ -1975,6 +1133,7 @@ export const walletApi = apiWithTag.injectEndpoints({
       },
     }),
 
+    // TODO refactor
     getNFTsByNFTIDs: build.query<any, { nftIds: string[] }>({
       async queryFn(args, _queryApi, _extraOptions, fetchWithBQ) {
         try {
@@ -1983,11 +1142,11 @@ export const walletApi = apiWithTag.injectEndpoints({
               const { data: nftData, error: nftError } = await fetchWithBQ({
                 command: 'getNftInfo',
                 service: NFT,
-                args: [nftId],
+                args: { coinId: nftId },
               });
 
               if (nftError) {
-                throw nftError;
+                throw nftError as Error;
               }
 
               // Add bech32m-encoded NFT identifier
@@ -2003,7 +1162,7 @@ export const walletApi = apiWithTag.injectEndpoints({
           return {
             data: nfts,
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
@@ -2011,40 +1170,74 @@ export const walletApi = apiWithTag.injectEndpoints({
       },
     }),
 
-    getNFTs: build.query<
-      { [walletId: number]: NFTInfo[] },
-      { walletIds: number[] }
-    >({
-      async queryFn(args, _queryApi, _extraOptions, fetchWithBQ) {
+    getNFTsCount: build.query<{ [walletId: number]: number; total: number }, { walletIds: number[] }>({
+      async queryFn({ walletIds }, _queryApi, _extraOptions, fetchWithBQ) {
         try {
-          const nftData: { [walletId: number]: NFTInfo[] }[] =
-            await Promise.all(
-              args.walletIds.map(async (walletId) => {
-                const { data: nftsData, error: nftsError } = await fetchWithBQ({
-                  command: 'getNfts',
-                  service: NFT,
-                  args: [walletId],
-                });
+          const countByWalletId: Record<number, number> = {};
+          await Promise.all(
+            walletIds.map(async (walletId) => {
+              const { data: nftCountData, error: nftCountError } = await fetchWithBQ({
+                command: 'getNftsCount',
+                service: NFT,
+                args: { walletId },
+              });
 
-                if (nftsError) {
-                  throw nftsError;
-                }
+              if (nftCountError) {
+                throw nftCountError as Error;
+              }
 
-                // Add bech32m-encoded NFT identifier
-                const updatedNFTs = nftsData.nftList.map((nft) => {
-                  return {
-                    ...nft,
-                    walletId,
-                    $nftId: toBech32m(nft.launcherId, 'nft'),
-                  };
-                });
+              countByWalletId[walletId] = nftCountData.count;
+            })
+          );
 
-                return {
-                  [walletId]: updatedNFTs,
-                };
-              })
-            );
-          const nftsByWalletId: { [walletId: number]: NFTInfo[] } = {};
+          const total = Object.values(countByWalletId).reduce((a, b) => a + b, 0);
+
+          return {
+            data: {
+              ...countByWalletId,
+              total,
+            },
+          };
+        } catch (error: any) {
+          return {
+            error,
+          };
+        }
+      },
+      providesTags: (countByWalletId) =>
+        countByWalletId
+          ? [...Object.entries(countByWalletId).map(([walletId]) => ({ type: 'NFTCount', id: walletId } as const))]
+          : [],
+    }),
+
+    getNFTs: build.query<{ [walletId: number]: NFTInfo[] }, { walletIds: number[]; num: number; startIndex: number }>({
+      async queryFn({ walletIds, num, startIndex }, _queryApi, _extraOptions, fetchWithBQ) {
+        try {
+          const nftData: { [walletId: number]: NFTInfo[] }[] = await Promise.all(
+            walletIds.map(async (walletId) => {
+              const { data: nftsData, error: nftsError } = await fetchWithBQ({
+                command: 'getNfts',
+                service: NFT,
+                args: { walletId, num, startIndex },
+              });
+
+              if (nftsError) {
+                throw nftsError as Error;
+              }
+
+              // Add bech32m-encoded NFT identifier
+              const updatedNFTs = nftsData.nftList.map((nft: any) => ({
+                ...nft,
+                walletId,
+                $nftId: toBech32m(nft.launcherId, 'nft'),
+              }));
+
+              return {
+                [walletId]: updatedNFTs,
+              };
+            })
+          );
+          const nftsByWalletId: { [walletId: string]: NFTInfo[] } = {};
           nftData.forEach((entry) => {
             Object.entries(entry).forEach(([walletId, nfts]) => {
               nftsByWalletId[walletId] = nfts;
@@ -2053,7 +1246,7 @@ export const walletApi = apiWithTag.injectEndpoints({
           return {
             data: nftsByWalletId,
           };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
@@ -2062,40 +1255,33 @@ export const walletApi = apiWithTag.injectEndpoints({
       providesTags: (nftsByWalletId, _error) =>
         nftsByWalletId
           ? [
-              ...Object.entries(nftsByWalletId).flatMap(([_walletId, nfts]) => {
-                return nfts.map(
-                  (nft) => ({ type: 'NFTInfo', id: nft.launcherId } as const)
-                );
-              }),
+              ...Object.entries(nftsByWalletId).flatMap(([_walletId, nfts]) =>
+                nfts.map((nft) => ({ type: 'NFTInfo', id: nft.launcherId } as const))
+              ),
               { type: 'NFTInfo', id: 'LIST' },
             ]
           : [{ type: 'NFTInfo', id: 'LIST' }],
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onNFTCoinAdded',
           service: NFT,
-          endpoint: () => walletApi.endpoints.getNFTs,
+          endpoint: 'getNFTs',
         },
         {
           command: 'onNFTCoinRemoved',
           service: NFT,
-          endpoint: () => walletApi.endpoints.getNFTs,
+          endpoint: 'getNFTs',
         },
         {
-          command: 'onNFTCoinTransferred',
+          command: 'onNFTCoinUpdated',
           service: NFT,
-          endpoint: () => walletApi.endpoints.getNFTs,
+          endpoint: 'getNFTs',
         },
       ]),
     }),
 
-    getNFTWalletsWithDIDs: build.query<any, {}>({
-      query: () => ({
-        command: 'getNftWalletsWithDids',
-        service: NFT,
-        args: [],
-      }),
-      transformResponse: (response: any) => response?.nftWallets,
+    getNFTWalletsWithDIDs: query(build, NFT, 'getNftWalletsWithDids', {
+      transformResponse: (response) => response.nftWallets,
       providesTags: (result, _error) =>
         result
           ? [
@@ -2106,22 +1292,22 @@ export const walletApi = apiWithTag.injectEndpoints({
               { type: 'NFTWalletWithDID', id: 'LIST' },
             ]
           : [{ type: 'NFTWalletWithDID', id: 'LIST' }],
-      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, [
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
         {
           command: 'onWalletCreated',
-          service: Wallet,
-          endpoint: () => walletApi.endpoints.getNFTWalletsWithDIDs,
+          service: WalletService,
+          endpoint: 'getNFTWalletsWithDIDs',
         },
       ]),
     }),
+
+    // TODO refactor
 
     getNFTInfo: build.query<any, { coinId: string }>({
       async queryFn(args, _queryApi, _extraOptions, fetchWithBQ) {
         try {
           // Slice off the '0x' prefix, if present
-          const coinId = args.coinId.toLowerCase().startsWith('0x')
-            ? args.coinId.slice(2)
-            : args.coinId;
+          const coinId = args.coinId.toLowerCase().startsWith('0x') ? args.coinId.slice(2) : args.coinId;
 
           if (coinId.length !== 64) {
             throw new Error('Invalid coinId');
@@ -2130,11 +1316,11 @@ export const walletApi = apiWithTag.injectEndpoints({
           const { data: nftData, error: nftError } = await fetchWithBQ({
             command: 'getNftInfo',
             service: NFT,
-            args: [coinId],
+            args: { coinId },
           });
 
           if (nftError) {
-            throw nftError;
+            throw nftError as Error;
           }
 
           // Add bech32m-encoded NFT identifier
@@ -2144,51 +1330,21 @@ export const walletApi = apiWithTag.injectEndpoints({
           };
 
           return { data: updatedNFT };
-        } catch (error: any) {
+        } catch (error) {
           return {
             error,
           };
         }
       },
-      providesTags: (result, _error) =>
-        result ? [{ type: 'NFTInfo', id: result.launcherId }] : [],
+      providesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: result.launcherId }] : []),
     }),
 
-    transferNFT: build.mutation<
-      any,
-      {
-        walletId: number;
-        nftCoinId: string;
-        launcherId: string;
-        targetAddress: string;
-        fee: string;
-      }
-    >({
-      query: ({ walletId, nftCoinId, targetAddress, fee }) => ({
-        command: 'transferNft',
-        service: NFT,
-        args: [walletId, nftCoinId, targetAddress, fee],
-      }),
-      invalidatesTags: (result, _error, { launcherId }) =>
-        result ? [{ type: 'NFTInfo', id: launcherId }] : [],
+    transferNFT: mutation(build, NFT, 'transferNft', {
+      invalidatesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: 'LIST' }] : []),
     }),
 
-    setNFTDID: build.mutation<
-      any,
-      {
-        walletId: number;
-        nftLauncherId: string;
-        nftCoinId: string;
-        did: string;
-        fee: string;
-      }
-    >({
-      query: ({ walletId, nftLauncherId, nftCoinId, did, fee }) => ({
-        command: 'setNftDid',
-        service: NFT,
-        args: [walletId, nftCoinId, did, fee],
-      }),
-      invalidatesTags: (result, _error, { nftLauncherId }) =>
+    setNFTDID: mutation(build, NFT, 'setNftDid', {
+      invalidatesTags: (result, _error) =>
         result
           ? [
               { type: 'NFTInfo', id: 'LIST' },
@@ -2198,40 +1354,48 @@ export const walletApi = apiWithTag.injectEndpoints({
           : [],
     }),
 
-    setNFTStatus: build.mutation<
-      any,
-      {
-        walletId: number;
-        nftLauncherId: string;
-        nftCoinId: string;
-        inTransaction: boolean;
-      }
-    >({
-      query: ({ walletId, nftLauncherId, nftCoinId, inTransaction }) => ({
-        command: 'setNftStatus',
-        service: NFT,
-        args: [walletId, nftCoinId, inTransaction],
-      }),
-      invalidatesTags: (result, _error, { nftLauncherId }) =>
-        result ? [{ type: 'NFTInfo', id: 'LIST' }] : [],
+    setNFTStatus: mutation(build, NFT, 'setNftStatus', {
+      invalidatesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: 'LIST' }] : []),
     }),
 
-    receiveNFT: build.mutation<
-      any,
-      {
-        walletId: number;
-        spendBundle: any;
-        fee: number;
-      }
-    >({
-      query: ({ walletId, spendBundle, fee }) => ({
-        command: 'receiveNft',
-        service: NFT,
-        args: [walletId, spendBundle, fee],
-      }),
-      invalidatesTags: (result, _error, { walletId }) =>
-        result ? [{ type: 'NFTInfo', id: 'LIST' }] : [],
+    signMessageByAddress: mutation(build, WalletService, 'signMessageByAddress'),
+
+    signMessageById: mutation(build, WalletService, 'signMessageById'),
+
+    resyncWallet: mutation(build, WalletService, 'resyncWallet'),
+
+    // notifications
+
+    getNotifications: query(build, NFT, 'getNotifications', {
+      transformResponse: (response) => response.notifications,
+      providesTags: (result, _error) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({
+                type: 'Notification',
+                id,
+              })),
+              { type: 'Notification', id: 'LIST' },
+            ]
+          : [{ type: 'Notification', id: 'LIST' }],
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
+        {
+          command: 'onNewOnChainNotification',
+          service: WalletService,
+          endpoint: 'getNotifications',
+        },
+      ]),
     }),
+
+    deleteNotifications: mutation(build, WalletService, 'deleteNotifications', {
+      invalidatesTags: [{ type: 'Notification', id: 'LIST' }],
+    }),
+
+    sendNotification: mutation(build, WalletService, 'sendNotification', {
+      invalidatesTags: (result, _error) => (result ? [{ type: 'Notification', id: 'LIST' }] : []),
+    }),
+
+    verifySignature: mutation(build, WalletService, 'verifySignature'),
 
     stakingInfo: build.query<
       {
@@ -2244,7 +1408,7 @@ export const walletApi = apiWithTag.injectEndpoints({
     >({
       query: ({ fingerprint }) => ({
         command: 'stakingInfo',
-        service: Wallet,
+        service: Staking,
         args: [fingerprint],
       }),
       transformResponse: (response: any) => response,
@@ -2259,11 +1423,7 @@ export const walletApi = apiWithTag.injectEndpoints({
       }
     >({
       async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse:
-          | {
-              data: Function;
-            }
-          | undefined;
+        let subscribeResponse: any;
 
         function unsubscribe() {
           if (subscribeResponse) {
@@ -2273,9 +1433,10 @@ export const walletApi = apiWithTag.injectEndpoints({
         }
 
         try {
-          const { amount, fingerprint, waitForConfirmation } = args;
+          const { waitForConfirmation, ...restArgs } = args;
 
           return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
             data: await new Promise(async (resolve, reject) => {
               const updatedTransactions: Transaction[] = [];
               let transactionName: string;
@@ -2294,17 +1455,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                     return false;
                   }
 
-                  const validSentTo = trx.sentTo.find(
-                    (record: [string, number, string | null]) => {
-                      const [, , error] = record;
+                  const validSentTo = trx.sentTo.find((record) => {
+                    const [, , error] = record;
 
-                      if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
-                        return false;
-                      }
-
-                      return true;
+                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
+                      return false;
                     }
-                  );
+
+                    return true;
+                  });
 
                   return !!validSentTo;
                 });
@@ -2323,7 +1482,7 @@ export const walletApi = apiWithTag.injectEndpoints({
                 subscribeResponse = await baseQuery(
                   {
                     command: 'onTransactionUpdate',
-                    service: Wallet,
+                    service: WalletService,
                     args: [
                       (data: any) => {
                         const {
@@ -2335,16 +1494,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                       },
                     ],
                   },
-                  queryApi,
-                  {}
+                  queryApi
                 );
               }
 
               // make transaction
               const { data: stakingSendData, error } = await fetchWithBQ({
                 command: 'stakingSend',
-                service: Wallet,
-                args: [amount, fingerprint],
+                service: Staking,
+                args: restArgs,
               });
 
               if (error) {
@@ -2389,11 +1547,7 @@ export const walletApi = apiWithTag.injectEndpoints({
       }
     >({
       async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse:
-          | {
-              data: Function;
-            }
-          | undefined;
+        let subscribeResponse: any;
 
         function unsubscribe() {
           if (subscribeResponse) {
@@ -2403,9 +1557,10 @@ export const walletApi = apiWithTag.injectEndpoints({
         }
 
         try {
-          const { amount, fingerprint, waitForConfirmation } = args;
+          const { waitForConfirmation, ...restArgs } = args;
 
           return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
             data: await new Promise(async (resolve, reject) => {
               const updatedTransactions: Transaction[] = [];
               let transactionName: string;
@@ -2424,17 +1579,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                     return false;
                   }
 
-                  const validSentTo = trx.sentTo.find(
-                    (record: [string, number, string | null]) => {
-                      const [, , error] = record;
+                  const validSentTo = trx.sentTo.find((record) => {
+                    const [, , error] = record;
 
-                      if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
-                        return false;
-                      }
-
-                      return true;
+                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
+                      return false;
                     }
-                  );
+
+                    return true;
+                  });
 
                   return !!validSentTo;
                 });
@@ -2453,7 +1606,7 @@ export const walletApi = apiWithTag.injectEndpoints({
                 subscribeResponse = await baseQuery(
                   {
                     command: 'onTransactionUpdate',
-                    service: Wallet,
+                    service: WalletService,
                     args: [
                       (data: any) => {
                         const {
@@ -2465,16 +1618,15 @@ export const walletApi = apiWithTag.injectEndpoints({
                       },
                     ],
                   },
-                  queryApi,
-                  {}
+                  queryApi
                 );
               }
 
               // make transaction
               const { data: stakingWithdrawData, error } = await fetchWithBQ({
                 command: 'stakingWithdraw',
-                service: Wallet,
-                args: [amount, fingerprint],
+                service: Staking,
+                args: restArgs,
               });
 
               if (error) {
@@ -2510,47 +1662,48 @@ export const walletApi = apiWithTag.injectEndpoints({
       invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
     }),
 
-    findPoolNFT: build.query<
+    findPoolNFT: build.mutation<
       {
         totalAmount: number;
-        amount: number;
+        balanceAmount: number;
         contractAddress: string;
-        status: string;
+        recordAmount: string;
       },
       {
         launcherId: string;
+        contractAddress?: string;
       }
     >({
-      query: ({ launcherId }) => ({
+      query: ({ launcherId, contractAddress }) => {
+        return {
         command: 'findPoolNFT',
-        service: Wallet,
-        args: [launcherId],
-      }),
-      transformResponse: (response: any) => response,
+        service: Staking,
+        args: [launcherId, contractAddress],
+      }},
     }),
 
     recoverPoolNFT: build.mutation<
       {
+        num: number;
         totalAmount: number;
         amount: number;
-        contractAddress: string;
         status: string;
       },
       {
         launcherId: string;
+        contractAddress?: string;
       }
     >({
-      query: ({ launcherId }) => {
+      query: ({ launcherId, contractAddress }) => {
         return {
         command: 'recoverPoolNFT',
-        service: Wallet,
-        args: [launcherId],
+        service: Staking,
+        args: [launcherId, contractAddress],
       }},
       invalidatesTags: [
         { type: 'Transactions', id: 'LIST' },
       ],
     }),
-
   }),
 });
 
@@ -2559,6 +1712,7 @@ export const {
   useGetLoggedInFingerprintQuery,
   useGetWalletsQuery,
   useGetTransactionQuery,
+  useGetTransactionMemoMutation,
   useGetPwStatusQuery,
   usePwAbsorbRewardsMutation,
   usePwJoinPoolMutation,
@@ -2570,29 +1724,21 @@ export const {
   useSendTransactionMutation,
   useGenerateMnemonicMutation,
   useGetPublicKeysQuery,
-  useAddKeyMutation,
   useDeleteKeyMutation,
   useCheckDeleteKeyMutation,
   useDeleteAllKeysMutation,
   useLogInMutation,
-  useLogInAndSkipImportMutation,
-  useLogInAndImportBackupMutation,
-  useGetBackupInfoQuery,
-  useGetBackupInfoByFingerprintQuery,
-  useGetBackupInfoByWordsQuery,
   useGetPrivateKeyQuery,
   useGetTransactionsQuery,
   useGetTransactionsCountQuery,
   useGetCurrentAddressQuery,
   useGetNextAddressMutation,
   useFarmBlockMutation,
+  useGetTimestampForHeightQuery,
   useGetHeightInfoQuery,
   useGetNetworkInfoQuery,
   useGetSyncStatusQuery,
   useGetWalletConnectionsQuery,
-  useOpenWalletConnectionMutation,
-  useCloseWalletConnectionMutation,
-  useCreateBackupMutation,
   useGetAllOffersQuery,
   useGetOffersCountQuery,
   useCreateOfferForIdsMutation,
@@ -2604,6 +1750,7 @@ export const {
   useGetOfferRecordMutation,
   useGetCurrentDerivationIndexQuery,
   useExtendDerivationIndexMutation,
+  useResyncWalletMutation,
 
   // Pool
   useCreateNewPoolWalletMutation,
@@ -2611,6 +1758,7 @@ export const {
   // CAT
   useCreateNewCATWalletMutation,
   useCreateCATWalletForExistingMutation,
+  useGetCATWalletInfoQuery,
   useGetCATAssetIdQuery,
   useGetCatListQuery,
   useGetCATNameQuery,
@@ -2624,7 +1772,7 @@ export const {
 
   // DID
   useCreateNewDIDWalletMutation,
-  useUpdateDIDRecoveryIdsQuery,
+  useUpdateDIDRecoveryIdsMutation,
   useGetDIDPubKeyQuery,
   useGetDIDQuery,
   useGetDIDsQuery,
@@ -2633,22 +1781,39 @@ export const {
   useGetDIDRecoveryListQuery,
   useGetDIDInformationNeededForRecoveryQuery,
   useGetDIDCurrentCoinInfoQuery,
+  useGetDIDInfoQuery,
 
   // NFTs
   useCalculateRoyaltiesForNFTsQuery,
   useGetNFTsByNFTIDsQuery,
+  useGetNFTsCountQuery,
+  useLazyGetNFTsCountQuery,
   useGetNFTsQuery,
+  useLazyGetNFTsQuery,
   useGetNFTWalletsWithDIDsQuery,
   useGetNFTInfoQuery,
+  useLazyGetNFTInfoQuery,
   useTransferNFTMutation,
   useSetNFTDIDMutation,
   useSetNFTStatusMutation,
-  useReceiveNFTMutation,
+
+  // sign
+  useSignMessageByAddressMutation,
+  useSignMessageByIdMutation,
+
+  // notifications
+  useGetNotificationsQuery,
+  useDeleteNotificationsMutation,
+  useSendNotificationMutation,
+
+  // verify
+  useVerifySignatureMutation,
+
   // staking
   useStakingInfoQuery,
   useStakingSendMutation,
   useStakingWithdrawMutation,
 
-  useFindPoolNFTQuery,
+  useFindPoolNFTMutation,
   useRecoverPoolNFTMutation,
 } = walletApi;
