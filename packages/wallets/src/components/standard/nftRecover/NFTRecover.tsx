@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trans, t } from '@lingui/macro';
+import type { NFTRecoverInfo } from '@ball-network/api';
 import {
   useLocalStorage,
   useFindPoolNFTMutation,
@@ -49,12 +50,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
   const [launcherId, setLauncherId] = useLocalStorage<string>('launcher_id', "");
   const [contractAddress, setContractAddress] = useLocalStorage<string>('contract_address', "");
   const [typography, setContent] = React.useState(" ")
-  const [nftData, setNFTData] = React.useState({
-    totalAmount: 0,
-    balanceAmount: 0,
-    recordAmount: 0,
-    contractAddress: "",
-  })
+  const [nftData, setNFTData] = React.useState<NFTRecoverInfo>()
   const [recoverPoolNFT, { isLoading: isRecoverPoolNFTLoading, error: recoverPoolNFTError }] = useRecoverPoolNFTMutation();
   const [findPoolNFT, { isLoading: isFindPoolNFTLoading, error: findPoolNFTError }] = useFindPoolNFTMutation();
   const findMethods = useForm<FindNFTData>({
@@ -89,6 +85,9 @@ export default function NFTRecover(props: NFTRecoverProps) {
     const err = findPoolNFTError ? findPoolNFTError+'' : ''
     setContent(err);
     if (!err) {
+      if (response.contractAddress == "") {
+        throw new Error(t`not find contract address, Please enter a contract address`);
+      }
       setNFTData(response);
       if (contractAddress != response.contractAddress) {
         setContractAddress(response.contractAddress);
@@ -170,7 +169,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Total Balance</Trans>}
               tooltip={<Trans>Total Balance</Trans>}
-              value={mojoToBallLocaleString(nftData.totalAmount, locale)}
+              value={nftData?mojoToBallLocaleString(nftData.totalAmount, locale):"-"}
             />
           </Grid>
           <Grid xs={12} md={4} item>
@@ -178,7 +177,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Not Available Balance</Trans>}
               tooltip={<Trans>Not Available Balance</Trans>}
-              value={mojoToBallLocaleString(nftData.balanceAmount, locale)}
+              value={nftData?mojoToBallLocaleString(nftData.balanceAmount, locale):"-"}
             />
           </Grid>
           <Grid xs={12} md={4} item>
@@ -186,7 +185,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               valueColor="secondary"
               title={<Trans>Available Balance</Trans>}
               tooltip={<Trans>You can only claim rewards older than 7 days</Trans>}
-              value={mojoToBallLocaleString(nftData.recordAmount, locale)}
+              value={nftData?mojoToBallLocaleString(nftData.recordAmount, locale):"-"}
             />
           </Grid>
         </Grid>
@@ -198,7 +197,7 @@ export default function NFTRecover(props: NFTRecoverProps) {
               variant="contained"
               color="primary"
               type="submit"
-              disable={nftData.recordAmount==0||nftData.contractAddress==""}
+              disable={!nftData || nftData.recordAmount==0 || nftData.contractAddress==""}
               loading={isRecoverPoolNFTLoading}
               data-testid="NFTRecover-Recover"
             >
