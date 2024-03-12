@@ -21,6 +21,7 @@ import Flex from '../Flex';
 import NewerAppVersionAvailable from '../LayoutDashboard/NewerAppVersionAvailable';
 import Link from '../Link';
 import LocaleToggle from '../LocaleToggle';
+
 import SettingsLabel from './SettingsLabel';
 
 export type SettingsAppProps = {
@@ -47,7 +48,7 @@ export default function SettingsApp(props: SettingsAppProps) {
   async function handleOpenFAQURL(): Promise<void> {
     try {
       const { shell } = window as unknown as { shell: Shell };
-      await shell.openExternal('https://github.com/Ball-Network/ballcoin-blockchain/wiki/FAQ');
+      await shell.openExternal('https://github.com/Chia-Network/chia-blockchain/wiki/FAQ');
     } catch (error: any) {
       showError(error);
     }
@@ -56,7 +57,7 @@ export default function SettingsApp(props: SettingsAppProps) {
   async function handleOpenSendFeedbackURL(): Promise<void> {
     try {
       const { shell } = window as unknown as { shell: Shell };
-      await shell.openExternal('https://feedback.ballcoin.top/lightwallet');
+      await shell.openExternal('https://feedback.ballcoin.vip/lightwallet');
     } catch (error: any) {
       showError(error);
     }

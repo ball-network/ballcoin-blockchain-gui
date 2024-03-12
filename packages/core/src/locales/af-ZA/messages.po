@@ -20,7 +20,7 @@ msgstr ""
 
 #: src/components/farm/FarmLatestBlockChallenges.tsx:39
 msgid "*Want to explore Ball’s blocks further? Check out <0>Ball Explorer</0> built by an open source developer."
-msgstr "*Wil jy dalk die Ball blokke verder wil ondersoek? Gaan kyk na <0>Ball Explorer<0>, gebou deur a 'n open source programmeerder."
+msgstr "*Wil jy dalk die BallCoin blokke verder wil ondersoek? Gaan kyk na <0>Ball Explorer<0>, gebou deur a 'n open source programmeerder."
 
 #: src/components/plot/add/PlotAddNumberOfPlots.tsx:94
 #~ msgid "0 automatically chooses bucket count"
@@ -187,8 +187,8 @@ msgid "Block VDF Iterations"
 msgstr "Block VDF Iterasies"
 
 #: src/components/block/Block.jsx:311
-msgid "Block at height {0} in the BallCoin Blockchain"
-msgstr "Blok is op hoogte {0} in die BallCoin Blockchain"
+msgid "Block at height {0} in the BallCoin blockchain"
+msgstr "Blok is op hoogte {0} in die BallCoin blockchain"
 
 #: src/components/fullNode/FullNode.jsx:331
 #~ msgid "Block hash"
@@ -1584,8 +1584,8 @@ msgstr ""
 #~ msgstr "Sub Block Height"
 
 #: src/components/block/Block.jsx:338
-#~ msgid "Sub Block at height {0} in the BallCoin Blockchain"
-#~ msgstr "Sub Block at height {0} in the BallCoin Blockchain"
+#~ msgid "Sub Block at height {0} in the BallCoin blockchain"
+#~ msgstr "Sub Block at height {0} in the BallCoin blockchain"
 
 #: src/components/wallet/rateLimited/WalletRateLimited.jsx:357
 msgid "Submit"

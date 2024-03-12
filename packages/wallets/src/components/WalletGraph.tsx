@@ -1,7 +1,8 @@
 import { TransactionType, WalletType } from '@ball-network/api';
 import type { Transaction } from '@ball-network/api';
 import { useGetWalletBalanceQuery } from '@ball-network/api-react';
-import { mojoToBall, mojoToCAT, blockHeightToTimestamp } from '@ball-network/core';
+import { Color, mojoToBall, mojoToCAT, blockHeightToTimestamp } from '@ball-network/core';
+import { alpha } from '@mui/material';
 import BigNumber from 'bignumber.js';
 import { orderBy, groupBy, map } from 'lodash';
 import React, { ReactNode } from 'react';
@@ -10,6 +11,7 @@ import styled from 'styled-components';
 import { VictoryChart, VictoryAxis, VictoryArea, VictoryTooltip, VictoryVoronoiContainer } from 'victory';
 
 import useWalletTransactions from '../hooks/useWalletTransactions';
+
 import WalletGraphTooltip from './WalletGraphTooltip';
 
 const StyledGraphContainer = styled.div`
@@ -103,8 +105,14 @@ function prepareGraphPoints(
   const points = [
     {
       x: blockHeightToTimestamp(peakTransaction.confirmedAtHeight, peakTransaction),
-      y: BigNumber.max(0, (walletType === WalletType.CAT ? mojoToCAT(start) : mojoToBall(start)).toNumber()), // max 21,000,000 safe to number
-      tooltip: (walletType === WalletType.CAT ? mojoToCAT(balance) : mojoToBall(balance)).toString(), // bignumber is not supported by react
+      y: BigNumber.max(
+        0,
+        ([WalletType.CAT, WalletType.CRCAT].includes(walletType) ? mojoToCAT(start) : mojoToBall(start)).toNumber()
+      ), // max 21,000,000 safe to number
+      tooltip: ([WalletType.CAT, WalletType.CRCAT].includes(walletType)
+        ? mojoToCAT(balance)
+        : mojoToBall(balance)
+      ).toString(), // bignumber is not supported by react
     },
   ];
 
@@ -120,8 +128,13 @@ function prepareGraphPoints(
 
     points.push({
       x: timestamp,
-      y: BigNumber.max(0, (walletType === WalletType.CAT ? mojoToCAT(start) : mojoToBall(start)).toNumber()), // max 21,000,000 safe to number
-      tooltip: walletType === WalletType.CAT ? mojoToCAT(start) : mojoToBall(start).toString(), // bignumber is not supported by react
+      y: BigNumber.max(
+        0,
+        ([WalletType.CAT, WalletType.CRCAT].includes(walletType) ? mojoToCAT(start) : mojoToBall(start)).toNumber()
+      ), // max 21,000,000 safe to number
+      tooltip: [WalletType.CAT, WalletType.CRCAT].includes(walletType)
+        ? mojoToCAT(start)
+        : mojoToBall(start).toString(), // bignumber is not supported by react
     });
   });
 
@@ -131,8 +144,8 @@ function prepareGraphPoints(
 function LinearGradient() {
   return (
     <linearGradient id="graph-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stopColor="rgba(92, 170, 98, 40%)" />
-      <stop offset="100%" stopColor="rgba(92, 170, 98, 0%)" />
+      <stop offset="0%" stopColor={alpha(Color.Green[500], 0.4)} />
+      <stop offset="100%" stopColor={alpha(Color.Green[500], 0)} />
     </linearGradient>
   );
 }
@@ -146,7 +159,16 @@ export type WalletGraphProps = {
 
 export default function WalletGraph(props: WalletGraphProps) {
   const { walletId, walletType, unit = '', height = 150 } = props;
-  const { transactions, isLoading: isWalletTransactionsLoading } = useWalletTransactions(walletId, 50, 0, 'RELEVANCE');
+  const { transactions, isLoading: isWalletTransactionsLoading } = useWalletTransactions({
+    walletId,
+    defaultRowsPerPage: 50,
+    defaultPage: 0,
+    sortKey: 'RELEVANCE',
+    typeFilter: {
+      mode: 2,
+      values: [TransactionType.INCOMING_CLAWBACK_RECEIVE, TransactionType.INCOMING_CLAWBACK_SEND],
+    },
+  });
   const { data: walletBalance, isLoading: isWalletBalanceLoading } = useGetWalletBalanceQuery({
     walletId,
   });
@@ -190,7 +212,7 @@ export default function WalletGraph(props: WalletGraphProps) {
           interpolation="monotoneX"
           style={{
             data: {
-              stroke: '#5DAA62',
+              stroke: Color.Green[500],
               strokeWidth: 2,
               strokeLinecap: 'round',
               fill: 'url(#graph-gradient)',

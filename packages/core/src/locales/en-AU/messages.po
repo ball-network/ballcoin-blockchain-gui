@@ -6,79 +6,91 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: en_AU\n"
-"Project-Id-Version: ballcoin-blockchain\n"
+"Project-Id-Version: 1263bc1f20e1271bda78e84d2f4a6562\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2022-10-24 18:15\n"
+"PO-Revision-Date: 2023-10-08 00:04\n"
 "Last-Translator: \n"
 "Language-Team: English, Australia\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Crowdin-Project: ballcoin-blockchain\n"
-"X-Crowdin-Project-ID: 440660\n"
+"X-Crowdin-Project: 1263bc1f20e1271bda78e84d2f4a6562\n"
+"X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: en-AU\n"
 "X-Crowdin-File: /main/packages/core/src/locales/en-US/messages.po\n"
-"X-Crowdin-File-ID: 1886\n"
+"X-Crowdin-File-ID: 15\n"
 
-#: src/components/EstimatedFee/EstimatedFee.tsx:61
+#: src/components/EstimatedFee/EstimatedFee.tsx:64
 msgid "(>5 min)"
-msgstr ""
+msgstr "(>5 min)"
 
-#: src/components/EstimatedFee/EstimatedFee.tsx:61
+#: src/components/EstimatedFee/EstimatedFee.tsx:64
 msgid "(~{selectedTime} min)"
-msgstr ""
+msgstr "(~{selectedTime} min)"
+
+#: src/components/Amount/Amount.tsx:87
+msgid "{0, plural, one {mojo} other {mojos}}"
+msgstr "{0, plural, one {mojo} other {mojos}}"
+
+#: src/hooks/useValidateChangePassphraseParams.tsx:36
+msgid "{minPassphraseLength, plural, one {Passphrases must be at least # character in length} other {Passphrases must be at least # characters in length}}"
+msgstr "{minPassphraseLength, plural, one {Passphrases must be at least # character in length} other {Passphrases must be at least # characters in length}}"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:95
 msgid "A new version of Ball is available!"
-msgstr ""
+msgstr "A new version of Ball is available for download!"
 
-#: src/screens/SelectKey/SelectKey.tsx:182
+#: src/screens/SelectKey/EmojiAndColorPicker.tsx:270
+msgid "Add Icon"
+msgstr "Add Icon"
+
+#: src/screens/SelectKey/SelectKey.tsx:174
 msgid "Add wallet"
-msgstr ""
+msgstr "Add wallet"
 
-#: src/components/Amount/Amount.tsx:36
+#: src/components/Amount/Amount.tsx:37
 msgid "Amount"
 msgstr "How much beer money"
 
-#: src/components/Settings/SettingsApp.tsx:93
+#: src/components/Settings/SettingsApp.tsx:94
 msgid "Appearance"
 msgstr "Appearance"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:144
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:158
 msgid "Are you sure you want to continue? Type in the fingerprint of this wallet key to confirm deletion."
-msgstr ""
+msgstr "Are you sure you want to continue? Type in the fingerprint of this wallet key to confirm deletion."
 
 #: src/components/FormBackButton/FormBackButton.tsx:15
-#: src/screens/SelectKey/SelectKey.tsx:137
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:156
+#: src/screens/SelectKey/SelectKey.tsx:129
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:170
 msgid "Back"
 msgstr "Back 'er up"
 
-#: src/components/Settings/SettingsApp.tsx:125
-msgid "Ball Application Version:"
-msgstr ""
-
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:82
 msgid "Ball {latestVersion} is currently the latest version available."
-msgstr ""
+msgstr "Ball {latestVersion} is currently the latest version available."
+
+#: src/components/Settings/SettingsApp.tsx:126
+msgid "Ball Application Version:"
+msgstr "Ball Application Version:"
 
 #: src/components/ConfirmDialog/ConfirmDialog.tsx:29
-#: src/hooks/useKeyringMigrationPrompt.tsx:17
+#: src/hooks/useKeyringMigrationPrompt.tsx:18
 #: src/screens/SelectKey/SelectKeyRenameForm.tsx:90
 msgid "Cancel"
 msgstr "Yeh Nah"
 
-#: src/components/Settings/SettingsApp.tsx:139
+#: src/components/Settings/SettingsApp.tsx:140
 msgid "Check for updates"
-msgstr ""
+msgstr "Check for updates"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:93
 msgid "Checking for updates..."
-msgstr ""
+msgstr "Checking for updates..."
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:110
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:47
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:70
 msgid "Close"
-msgstr ""
+msgstr "Close"
 
 #: src/components/FormatConnectionStatus/FormatConnectionStatus.tsx:32
 msgid "Connected"
@@ -92,57 +104,57 @@ msgstr "Copied"
 msgid "Copy to Clipboard"
 msgstr "Copy to Clipboard"
 
-#: src/screens/SelectKey/SelectKey.tsx:185
-msgid "Create New"
-msgstr ""
-
 #: src/screens/SelectKey/SelectKey.tsx:170
 #~ msgid "Create a new private key"
 #~ msgstr "Create a new private key"
 
-#: src/screens/SelectKey/SelectKey.tsx:280
+#: src/screens/SelectKey/SelectKey.tsx:274
 msgid "Create a new wallet key"
-msgstr ""
+msgstr "Create a new wallet key"
 
-#: src/screens/SelectKey/SelectKey.tsx:272
+#: src/screens/SelectKey/SelectKey.tsx:266
 msgid "Create a new wallet key to get started with Ball."
-msgstr ""
+msgstr "Create a new wallet key to get started with Ball."
 
-#: src/components/Settings/SettingsApp.tsx:110
+#: src/screens/SelectKey/SelectKey.tsx:177
+msgid "Create New"
+msgstr "Create New"
+
+#: src/components/Settings/SettingsApp.tsx:111
 msgid "Dark"
 msgstr "Night time"
 
-#: src/screens/SelectKey/SelectKey.tsx:136
-#: src/screens/SelectKey/SelectKeyItem.tsx:113
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:166
+#: src/screens/SelectKey/SelectKey.tsx:128
+#: src/screens/SelectKey/SelectKeyItem.tsx:114
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:180
 msgid "Delete"
 msgstr "Delete"
 
-#: src/screens/SelectKey/SelectKey.tsx:210
-msgid "Delete All Keys"
-msgstr ""
-
-#: src/screens/SelectKey/SelectKey.tsx:135
+#: src/screens/SelectKey/SelectKey.tsx:127
 msgid "Delete all keys"
 msgstr "Delete all keys"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:96
+#: src/screens/SelectKey/SelectKey.tsx:202
+msgid "Delete All Keys"
+msgstr "Delete All Keys"
+
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:110
 msgid "Delete key {fingerprint}"
 msgstr "Delete key {fingerprint}"
 
-#: src/screens/SelectKey/SelectKey.tsx:141
+#: src/screens/SelectKey/SelectKey.tsx:133
 msgid "Deleting all keys will permanently remove the keys from your computer, make sure you have backups. Are you sure you want to continue?"
 msgstr "Deleting all keys will permanently remove the keys from your computer, make sure you have backups. Are you sure you want to continue?"
 
-#: src/screens/SelectKey/SelectKeyItem.tsx:105
+#: src/screens/SelectKey/SelectKeyItem.tsx:106
 msgid "Details"
-msgstr ""
+msgstr "Details"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:59
+#: src/hooks/useValidateChangePassphraseParams.tsx:60
 msgid "Disable"
 msgstr "Disable"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:58
+#: src/hooks/useValidateChangePassphraseParams.tsx:59
 msgid "Disable Passphrase Protection"
 msgstr "Disable Passphrase Protection"
 
@@ -151,12 +163,12 @@ msgstr "Disable Passphrase Protection"
 msgid "Discard"
 msgstr "Discard"
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:182
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:148
 msgid "Download"
-msgstr ""
+msgstr "Download"
 
 #: src/components/CardSimple/CardSimple.tsx:52
-#: src/hooks/useShowError.tsx:11
+#: src/hooks/useShowError.tsx:14
 msgid "Error"
 msgstr "Error, she's knackered"
 
@@ -166,39 +178,43 @@ msgstr "Error, she's knackered:"
 
 #: src/screens/SelectKey/SelectKeyRenameForm.tsx:91
 msgid "Esc"
-msgstr ""
+msgstr "Esc"
+
+#: src/components/LayoutMain/LayoutFooter.tsx:49
+msgid "FAQ"
+msgstr "FAQ"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:90
 msgid "Farmer Public Key"
-msgstr ""
+msgstr "Farmer Public Key"
 
 #: src/screens/SelectKey/SelectKeyDeleteKeyDialog.tsx:58
 msgid "Farmer public key:"
 msgstr "Farmer public key:"
 
-#: src/components/Settings/SettingsApp.tsx:78
+#: src/components/Settings/SettingsApp.tsx:79
 msgid "Farming"
 msgstr "Earning beer money"
 
-#: src/components/EstimatedFee/EstimatedFee.tsx:333
-#: src/components/EstimatedFee/EstimatedFee.tsx:367
+#: src/components/EstimatedFee/EstimatedFee.tsx:338
+#: src/components/EstimatedFee/EstimatedFee.tsx:372
 #: src/components/Fee/Fee.tsx:44
 msgid "Fee"
 msgstr "Fee"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:80
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:95
 msgid "Fingerprint does not match"
-msgstr ""
+msgstr "Fingerprint does not match"
 
-#: src/components/Settings/SettingsApp.tsx:151
+#: src/components/Settings/SettingsApp.tsx:152
 msgid "Frequently Asked Questions"
 msgstr "Frequently Asked Questions because people can't read"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:121
 msgid "Go To Download Page"
-msgstr ""
+msgstr "Go To Download Page"
 
-#: src/components/Settings/SettingsApp.tsx:147
+#: src/components/Settings/SettingsApp.tsx:148
 msgid "Help"
 msgstr "Help me Jebus"
 
@@ -209,15 +225,15 @@ msgstr "Help translate"
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:124
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:146
 msgid "Hide"
-msgstr ""
+msgstr "Hide"
 
 #: src/components/AdvancedOptions/AdvancedOptions.tsx:27
 msgid "Hide Advanced Options"
 msgstr "Hide this from your wife"
 
-#: src/screens/SelectKey/SelectKey.tsx:190
+#: src/screens/SelectKey/SelectKey.tsx:182
 msgid "Import Existing"
-msgstr ""
+msgstr "Import Existing"
 
 #: src/screens/SelectKey/SelectKey.tsx:181
 #~ msgid "Import from Mnemonics (12 or 24 words)"
@@ -227,96 +243,100 @@ msgstr ""
 msgid "Incorrect value"
 msgstr "Incorrect value you drongo"
 
-#: src/components/Settings/SettingsApp.tsx:117
+#: src/components/Settings/SettingsApp.tsx:118
 msgid "Language"
 msgstr "Language"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:57
 msgid "Latest Version:"
-msgstr ""
+msgstr "Latest Version:"
 
-#: src/components/Settings/SettingsApp.tsx:102
+#: src/components/Settings/SettingsApp.tsx:103
 msgid "Light"
 msgstr "Daytime"
 
-#: src/components/EstimatedFee/EstimatedFee.tsx:221
-msgid "Likely in >5 minutes"
-msgstr ""
-
-#: src/components/EstimatedFee/EstimatedFee.tsx:222
+#: src/components/EstimatedFee/EstimatedFee.tsx:227
 msgid "Likely in {0} seconds"
-msgstr ""
+msgstr "Likely in {0} seconds"
 
-#: src/components/EstimatedFee/EstimatedFee.tsx:219
+#: src/components/EstimatedFee/EstimatedFee.tsx:224
 msgid "Likely in {minutes} minutes"
-msgstr ""
+msgstr "Likely in {minutes} minutes"
+
+#: src/components/EstimatedFee/EstimatedFee.tsx:226
+msgid "Likely in >5 minutes"
+msgstr "Likely in >5 minutes"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:46
 msgid "Loading details"
-msgstr ""
+msgstr "Loading details"
 
-#: src/screens/SelectKey/SelectKey.tsx:242
-msgid "Loading list of the keys"
-msgstr "Loading list of the keys"
+#: src/screens/SelectKey/SelectKey.tsx:236
+msgid "Loading keys"
+msgstr "Loading keys"
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:316
+#: src/screens/SelectKey/SelectKey.tsx:117
+#~ msgid "Loading list of the keys"
+#~ msgstr "Loading list of the keys"
+
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:317
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:336
+#~ msgid "Log Out"
+#~ msgstr ""
+
 #: src/components/LayoutDashboard/LayoutDashboard.tsx:335
-msgid "Log Out"
-msgstr "Log Out"
+#~ msgid "Logout"
+#~ msgstr ""
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:334
-msgid "Logout"
-msgstr "Logout"
-
-#: src/hooks/useKeyringMigrationPrompt.tsx:16
+#: src/hooks/useKeyringMigrationPrompt.tsx:17
 msgid "Migrate"
 msgstr "Migrate"
 
-#: src/hooks/useKeyringMigrationPrompt.tsx:15
+#: src/hooks/useKeyringMigrationPrompt.tsx:16
 msgid "Migration required"
 msgstr "Migration required"
 
-#: src/components/Settings/SettingsApp.tsx:69
+#: src/components/Settings/SettingsApp.tsx:70
 msgid "Mode"
 msgstr "Mode"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:107
 msgid "NEVER SHARE THESE WITH ANYONE"
-msgstr ""
+msgstr "NEVER SHARE THESE WITH ANYONE"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:41
+#: src/hooks/useValidateChangePassphraseParams.tsx:42
 msgid "New passphrase is the same as your current passphrase"
 msgstr "New passphrase is the same as your current passphrase you drongo"
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:167
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:133
 msgid "New version {latestVersion} available"
-msgstr ""
+msgstr "New version {latestVersion} available"
 
 #: src/screens/SelectKey/SelectKeyDeleteKeyDialog.tsx:84
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:138
 msgid "No 24 word seed, since this key is imported."
 msgstr "No 24 word seed, since this key is imported."
 
-#: src/screens/SelectKey/WalletStatus.tsx:61
-#~ msgid "Not Synced"
-#~ msgstr ""
-
 #: src/components/FormatConnectionStatus/FormatConnectionStatus.tsx:33
 msgid "Not connected"
 msgstr "Not connected"
+
+#: src/screens/SelectKey/WalletStatus.tsx:61
+#~ msgid "Not Synced"
+#~ msgstr ""
 
 #: src/components/AlertDialog/AlertDialog.tsx:23
 #: src/components/ConfirmDialog/ConfirmDialog.tsx:30
 msgid "OK"
 msgstr "You ripper"
 
-#: src/screens/SelectKey/SelectKey.tsx:264
+#: src/screens/SelectKey/SelectKey.tsx:258
 msgid "Open a world of possibilities."
-msgstr ""
+msgstr "Open a world of possibilities."
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:98
 msgid "Pool Public Key"
-msgstr ""
+msgstr "Pool Public Key"
 
 #: src/screens/SelectKey/SelectKeyDeleteKeyDialog.tsx:66
 msgid "Pool public key:"
@@ -333,23 +353,35 @@ msgstr "Private key:"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:82
 msgid "Public Key"
-msgstr ""
+msgstr "Public Key"
 
 #: src/screens/SelectKey/SelectKeyDeleteKeyDialog.tsx:50
 msgid "Public key:"
 msgstr "Public key:"
 
+#: src/screens/SelectKey/EmojiAndColorPicker.tsx:289
+msgid "Random"
+msgstr "Random"
+
+#: src/components/Fee/Fee.tsx:18
+msgid "Recommended value: 0.000005"
+msgstr "Recommended value: 0.000005"
+
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:71
 msgid "Release Notes"
-msgstr ""
+msgstr "Release Notes"
 
 #: src/components/ErrorBoundary/ErrorBoundary.tsx:85
 msgid "Reload Application"
 msgstr "Reload Application"
 
-#: src/screens/SelectKey/SelectKeyItem.tsx:97
+#: src/screens/SelectKey/EmojiAndColorPicker.tsx:270
+msgid "Remove Icon"
+msgstr "Remove Icon"
+
+#: src/screens/SelectKey/SelectKeyItem.tsx:98
 msgid "Rename"
-msgstr ""
+msgstr "Rename"
 
 #: src/components/ErrorBoundary/ErrorBoundary.tsx:80
 msgid "Report an Issue"
@@ -358,23 +390,24 @@ msgstr "Report an Issue"
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:124
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:146
 msgid "Reveal"
-msgstr ""
+msgstr "Reveal"
 
 #: src/screens/SelectKey/SelectKeyRenameForm.tsx:109
 msgid "Save"
-msgstr ""
+msgstr "Save"
 
+#: src/screens/SelectKey/EmojiAndColorPicker.tsx:182
 #: src/screens/SelectKey/Search.tsx:34
 msgid "Search"
-msgstr ""
+msgstr "Search"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:113
 msgid "Secret Key"
-msgstr ""
+msgstr "Secret Key"
 
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:131
 msgid "Seed Phrase"
-msgstr ""
+msgstr "Seed Phrase"
 
 #: src/screens/SelectKey/SelectKeyDeleteKeyDialog.tsx:76
 msgid "Seed:"
@@ -388,33 +421,34 @@ msgstr "Seed:"
 msgid "Select..."
 msgstr "Select..."
 
-#: src/components/Settings/SettingsApp.tsx:154
+#: src/components/LayoutMain/LayoutFooter.tsx:52
+#: src/components/Settings/SettingsApp.tsx:155
 msgid "Send Feedback"
 msgstr "Send Feedback"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:52
+#: src/hooks/useValidateChangePassphraseParams.tsx:53
 msgid "Setting a passphrase is strongly recommended to protect your keys. Are you sure you want to skip setting a passphrase?"
 msgstr "Setting a passphrase is strongly recommended to protect your keys. Are you sure you want to skip setting a passphrase?"
 
-#: src/components/Settings/Settings.tsx:49
-#: src/components/Settings/Settings.tsx:59
+#: src/components/Settings/Settings.tsx:50
+#: src/components/Settings/Settings.tsx:60
 msgid "Settings"
 msgstr "Settings"
 
 #: src/components/AdvancedOptions/AdvancedOptions.tsx:26
 msgid "Show Advanced Options"
-msgstr "Hide this from your wife"
+msgstr "Show Advanced Options"
 
 #: src/screens/SelectKey/SelectKey.tsx:139
 #~ msgid "Sign In"
 #~ msgstr "Sign In"
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:170
-#: src/hooks/useValidateChangePassphraseParams.tsx:50
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:136
+#: src/hooks/useValidateChangePassphraseParams.tsx:51
 msgid "Skip"
 msgstr "Skip"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:49
+#: src/hooks/useValidateChangePassphraseParams.tsx:50
 msgid "Skip Passphrase Protection"
 msgstr "Skip Passphrase Protection"
 
@@ -430,25 +464,25 @@ msgstr "Woops, something went wrong"
 #~ msgid "Syncing"
 #~ msgstr ""
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:28
+#: src/hooks/useValidateChangePassphraseParams.tsx:29
 msgid "The provided passphrase and confirmation do not match"
 msgstr "The provided passphrase and confirmation do not match"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:126
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:140
 msgid "This key is used for a wallet that may have a non-zero balance. By deleting this key you may lose access to this wallet"
-msgstr ""
+msgstr "This key is used for a wallet that may have a non-zero balance. By deleting this key you may lose access to this wallet"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:108
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:122
 msgid "This key is used for your farming rewards address. By deleting this key you may lose access to any future farming rewards"
-msgstr ""
+msgstr "This key is used for your farming rewards address. By deleting this key you may lose access to any future farming rewards"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:117
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:131
 msgid "This key is used for your pool rewards address. By deleting this key you may lose access to any future pool rewards"
-msgstr ""
+msgstr "This key is used for your pool rewards address. By deleting this key you may lose access to any future pool rewards"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:138
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:152
 msgid "This will permanently remove the key from your computer, make sure you have your mnemonic phrase backed up."
-msgstr ""
+msgstr "This will permanently remove the key from your computer, make sure you have your mnemonic phrase backed up."
 
 #: src/utils/getTransactionResult.ts:15
 msgid "Transaction has not been sent to node yet"
@@ -462,13 +496,17 @@ msgstr "Transaction has sent to a full node and is pending inclusion into the me
 msgid "Transaction has successfully been sent to a full node and included in the mempool."
 msgstr "Transaction has successfully been sent to a full node and included in the mempool."
 
-#: src/screens/SelectKey/SelectKey.tsx:249
+#: src/screens/SelectKey/SelectKey.tsx:243
 msgid "Try Again"
 msgstr "Try again"
 
-#: src/screens/SelectKey/SelectKey.tsx:253
-msgid "Unable to load the list of the keys"
-msgstr "Unable to load the list of the keys"
+#: src/screens/SelectKey/SelectKey.tsx:247
+msgid "Unable to load keys"
+msgstr "Unable to load keys"
+
+#: src/screens/SelectKey/SelectKey.tsx:128
+#~ msgid "Unable to load the list of the keys"
+#~ msgstr "Unable to load the list of the keys"
 
 #: src/components/LocaleToggle/LocaleToggle.tsx:44
 msgid "Unknown"
@@ -479,7 +517,7 @@ msgstr "Unknown"
 msgid "Unsaved Changes"
 msgstr "Unsaved Changes"
 
-#: src/hooks/useValidateChangePassphraseParams.tsx:61
+#: src/hooks/useValidateChangePassphraseParams.tsx:62
 msgid "Using a passphrase is strongly recommended to protect your keys. Are you sure you want to disable passphrase protection?"
 msgstr "Using a passphrase is strongly recommended to protect your keys. Are you sure you want to disable passphrase protection?"
 
@@ -487,32 +525,32 @@ msgstr "Using a passphrase is strongly recommended to protect your keys. Are you
 msgid "Value seems high"
 msgstr "Value seems high"
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:269
-#: src/components/Settings/SettingsApp.tsx:86
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:233
+#: src/components/Settings/SettingsApp.tsx:87
 msgid "Wallet"
 msgstr "Wallet"
 
-#: src/screens/SelectKey/WalletDeleteDialog.tsx:149
-msgid "Wallet Fingerprint"
-msgstr ""
-
-#: src/screens/SelectKey/SelectKey.tsx:229
-msgid "Wallet Keys"
-msgstr ""
-
 #: src/screens/SelectKey/SelectKeyDetailDialog.tsx:63
-#: src/screens/SelectKey/SelectKeyItem.tsx:233
+#: src/screens/SelectKey/SelectKeyItem.tsx:234
 msgid "Wallet {0}"
-msgstr ""
+msgstr "Wallet {0}"
+
+#: src/screens/SelectKey/WalletDeleteDialog.tsx:163
+msgid "Wallet Fingerprint"
+msgstr "Wallet Fingerprint"
+
+#: src/screens/SelectKey/SelectKey.tsx:223
+msgid "Wallet Keys"
+msgstr "Wallet Keys"
 
 #: src/screens/SelectKey/SelectKey.tsx:142
 #~ msgid "Welcome to Ball. Please log in with an existing key, or create a new key."
 #~ msgstr "Welcome to Ball. Please log in with an existing key, or create a new key."
 
-#: src/components/LayoutDashboard/LayoutDashboard.tsx:176
+#: src/components/LayoutDashboard/LayoutDashboard.tsx:142
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:66
 msgid "What's New"
-msgstr ""
+msgstr "What's New"
 
 #: src/components/Back/Back.tsx:40
 #: src/components/FormBackButton/FormBackButton.tsx:31
@@ -521,20 +559,12 @@ msgstr "You have made changes. Do you want to discard them?"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:97
 msgid "You're up to date"
-msgstr ""
+msgstr "You're up to date"
 
 #: src/components/LayoutDashboard/NewerAppVersionAvailable.tsx:49
 msgid "Your Current Version:"
-msgstr ""
+msgstr "Your Current Version:"
 
-#: src/hooks/useKeyringMigrationPrompt.tsx:20
+#: src/hooks/useKeyringMigrationPrompt.tsx:21
 msgid "Your keys have not been migrated to a new keyring. You will be unable to create new keys or delete existing keys until migration completes. Would you like to migrate your keys now?"
 msgstr "Your keys have not been migrated to a new keyring. You will be unable to create new keys or delete existing keys until migration completes. Would you like to migrate your keys now?"
-
-#: src/components/Amount/Amount.tsx:86
-msgid "{0, plural, one {mojo} other {mojos}}"
-msgstr "{0, plural, one {mojo} other {mojos}}"
-
-#: src/hooks/useValidateChangePassphraseParams.tsx:35
-msgid "{minPassphraseLength, plural, one {Passphrases must be at least # character in length} other {Passphrases must be at least # characters in length}}"
-msgstr "{minPassphraseLength, plural, one {Passphrases must be at least # character in length} other {Passphrases must be at least # characters in length}}"

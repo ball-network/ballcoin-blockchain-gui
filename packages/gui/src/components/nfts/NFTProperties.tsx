@@ -1,7 +1,7 @@
 import type { NFTAttribute } from '@ball-network/api';
-import { CopyToClipboard, Flex, Tooltip } from '@ball-network/core';
+import { Color, CopyToClipboard, Flex, Tooltip } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
-import { Box, Grid, Typography } from '@mui/material';
+import { alpha, Box, Grid, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
@@ -13,7 +13,7 @@ import isRankingAttribute from '../../util/isRankingAttribute';
 
 const StyledTitle = styled(Box)`
   font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: ${alpha(Color.Neutral[50], 0.7)};
 `;
 
 const StyledValue = styled(Box)`
@@ -38,7 +38,7 @@ export function NFTProperty(props: NFTPropertyProps) {
   const theme = useTheme();
   // eslint-disable-next-line @typescript-eslint/naming-convention -- Comes from API like this
   const { name, trait_type, value: rawValue } = attribute;
-  if (typeof rawValue === 'object') {
+  if (typeof rawValue === 'object' || typeof rawValue === 'undefined') {
     return null;
   }
   const value = rawValue.toString();

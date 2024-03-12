@@ -1,7 +1,15 @@
 import { WalletType } from '@ball-network/api';
-import { CopyToClipboard, Flex, Link, FormatLargeNumber, TooltipIcon, mojoToCATLocaleString } from '@ball-network/core';
+import {
+  Color,
+  CopyToClipboard,
+  Flex,
+  Link,
+  FormatLargeNumber,
+  TooltipIcon,
+  mojoToCATLocaleString,
+} from '@ball-network/core';
 import { Plural, t, Trans } from '@lingui/macro';
-import { Box, Typography } from '@mui/material';
+import { alpha, Box, Typography } from '@mui/material';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -9,13 +17,14 @@ import useAssetIdName from '../../hooks/useAssetIdName';
 import useNFTMinterDID from '../../hooks/useNFTMinterDID';
 import { launcherIdToNFTId } from '../../util/nfts';
 import NFTSummary from '../nfts/NFTSummary';
+
 import { formatAmountForWalletType } from './utils';
 
 /* ========================================================================== */
 
 const StyledTitle = styled(Box)`
   font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: ${alpha(Color.Neutral[50], 0.7)};
 `;
 
 const StyledValue = styled(Box)`
@@ -166,7 +175,7 @@ export function OfferSummaryTokenRow(props: OfferSummaryTokenRowProps): React.Re
               <Box flexGrow={1}>
                 <StyledTitle>Name</StyledTitle>
               </Box>
-              {(!assetIdInfo || assetIdInfo?.walletType === WalletType.CAT) && (
+              {(!assetIdInfo || [WalletType.CAT, WalletType.CRCAT].includes(assetIdInfo?.walletType)) && (
                 <Link href={`https://www.taildatabase.com/tail/${assetId.toLowerCase()}`} target="_blank">
                   <Trans>Search on Tail Database</Trans>
                 </Link>
@@ -175,7 +184,7 @@ export function OfferSummaryTokenRow(props: OfferSummaryTokenRowProps): React.Re
 
             <StyledValue>{tooltipDisplayName}</StyledValue>
           </Flex>
-          {(!assetIdInfo || assetIdInfo?.walletType === WalletType.CAT) && (
+          {(!assetIdInfo || [WalletType.CAT, WalletType.CRCAT].includes(assetIdInfo?.walletType)) && (
             <Flex flexDirection="column" gap={0}>
               <StyledTitle>Asset ID</StyledTitle>
               <Flex alignItems="center" gap={1}>

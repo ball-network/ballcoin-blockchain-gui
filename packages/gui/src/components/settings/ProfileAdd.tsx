@@ -68,7 +68,7 @@ export default function ProfileAdd() {
   const canCreateProfile = (balance?.spendableBalance ?? 0) > 0;
 
   function handleClick() {
-    const url = `https://${isTestnet ? 'testnet10-faucet.ballcoin.top' : 'faucet.ballcoin.top'}/?address=${currentAddress}`;
+    const url = `https://${isTestnet ? 'testnet10-faucet.ballcoin.vip' : 'faucet.ballcoin.vip'}/?address=${currentAddress}`;
     openExternal(url);
   }
 
@@ -108,7 +108,7 @@ export default function ProfileAdd() {
 
   return (
     <Form methods={methods} onSubmit={handleSubmit}>
-      <Flex flexDirection="column" flexGrow={1} marginTop={-0.5}>
+      <Flex flexDirection="column" flexGrow={1}>
         <Typography variant="h6">
           <Trans>Create a new profile</Trans>
         </Typography>

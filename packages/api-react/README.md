@@ -1,8 +1,8 @@
 # ballcoin-blockchain-gui/api-react
 
-![Ball logo](https://www.ballcoin.top/wp-content/uploads/2022/09/ball-logo.svg)
+![Ball logo](https://www.ballcoin.vip/wp-content/uploads/2022/09/ball-logo.svg)
 
-![GitHub contributors](https://img.shields.io/github/contributors/Ball-Network/ballcoin-blockchain-gui?logo=GitHub)
+![GitHub contributors](https://img.shields.io/github/contributors/ball-network/ballcoin-blockchain-gui?logo=GitHub)
 
 This library provides react hooks on the top of @ball-network/api and uses [RTK Query](https://redux-toolkit.js.org/rtk-query/overview) under the hood.
 It is designed to simplify common cases for loading data in a web application, eliminating the need to hand-write data fetching & caching logic yourself. Benefits include:
@@ -22,13 +22,14 @@ It is designed to simplify common cases for loading data in a web application, e
 ```tsx
 import React from 'react';
 import { useGetPublicKeysQuery } from '@ball-network/api-react';
+import { Loading } from '@ball-network/core';
 import Suspender from 'react-suspender';
 
 export default function PublicKeys() {
   const { data: publicKeys, isLoading, error } = useGetPublicKeysQuery();
 
   if (isLoading) {
-    return <Suspender />;
+    return <Loading center />;
   }
 
   if (error) {
@@ -74,4 +75,4 @@ export default function Application() {
 
 ## Development
 
-Please read and follow the main [README.md](https://github.com/Ball-Network/ballcoin-blockchain-gui) of this monorepo.
+Please read and follow the main [README.md](https://github.com/ball-network/ballcoin-blockchain-gui) of this monorepo.

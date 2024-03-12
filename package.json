@@ -1,18 +1,20 @@
 {
   "name": "root",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "clean": "lerna clean",
-    "bootstrap": "lerna bootstrap",
     "version:major": "lerna version major",
     "version:minor": "lerna version minor",
     "version:patch": "lerna version patch",
     "publish": "lerna publish",
-    "postinstall": "npm run bootstrap && npm run prettier:postinstall",
+    "postinstall": "npm run prettier:postinstall",
     "prettier:postinstall": "prettier --write **/package.json **/package-lock.json",
     "check": "npm run check:lint ; npm run check:prettier ; npm run check:types",
     "check:lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "check:prettier": "prettier --check --ignore-path .gitignore .",
-    "check:types": "lerna exec --scope '{@ball-network/api,@ball-network/api-react,@ball-network/icons}' -- npm run check:types",
+    "check:types": "npm run check:types --workspace=packages/api --workspace=packages/api-react --workspace=packages/icons",
     "check:typesEverywhere": "lerna exec -- npm run check:types",
     "autofix": "npm run autofix:lint ; npm run autofix:prettier",
     "autofix:lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
@@ -20,16 +22,18 @@
     "build": "lerna run build",
     "build:skipLocales": "lerna run build:js",
     "build:ci": "lerna run build:ci",
-    "build:watch": "lerna run build:watch",
-    "start:gui": "lerna run start --scope @ball-network/gui",
-    "dev:gui": "lerna run dev --scope @ball-network/gui --stream",
+    "build:watch": "lerna run build:watch --parallel",
+    "start:gui": "npm run start --workspace packages/gui",
+    "dev:gui": "npm run dev --workspace @ball-network/gui",
     "electron": "npm run start:gui",
     "locale:extract": "lerna run locale:extract",
     "locale:clean": "lerna run locale:clean",
     "locale": "lerna run locale",
     "audit": "lerna exec -- npm audit",
     "audit:fix": "lerna exec -- npm audit fix",
-    "test": "lerna run test --stream -- -- --passWithNoTests --coverage",
+    "test": "lerna run test --stream -- --passWithNoTests --coverage --coverageDirectory=.coverage && npm run coverage:merge && npm run coverage:report",
+    "coverage:merge": "npx istanbul-merge --out .nyc_output/coverage.json packages/api/.coverage/coverage-final.json packages/api-react/.coverage/coverage-final.json packages/core/.coverage/coverage-final.json packages/gui/.coverage/coverage-final.json  packages/icons/.coverage/coverage-final.json packages/wallets/.coverage/coverage-final.json",
+    "coverage:report": "npx nyc report --reporter=text --reporter=lcov",
     "restoreMessages": "node restoreMessages.js",
     "prepare": "husky install"
   },
@@ -38,26 +42,30 @@
     "*": "prettier --check --ignore-unknown --ignore-path .gitignore"
   },
   "dependencies": {
-    "lerna": "^5.1.8"
+    "lerna": "7.1.5",
+    "nx": "16.7.2"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.46.1",
-    "@typescript-eslint/parser": "5.46.1",
-    "eslint": "8.30.0",
+    "@typescript-eslint/eslint-plugin": "6.4.1",
+    "@typescript-eslint/parser": "6.4.1",
+    "date-and-time": "2.4.3",
+    "eslint": "8.47.0",
     "eslint-config-airbnb": "19.0.4",
-    "eslint-config-airbnb-typescript": "17.0.0",
-    "eslint-config-prettier": "8.5.0",
+    "eslint-config-airbnb-typescript": "17.1.0",
+    "eslint-config-prettier": "8.10.0",
     "eslint-plugin-eslint-comments": "3.2.0",
-    "eslint-plugin-import": "2.26.0",
-    "eslint-plugin-jsx-a11y": "6.6.1",
-    "eslint-plugin-react": "7.31.11",
+    "eslint-plugin-import": "2.28.1",
+    "eslint-plugin-jsx-a11y": "6.7.1",
+    "eslint-plugin-react": "7.33.2",
     "eslint-plugin-react-hooks": "4.6.0",
-    "eslint-plugin-unicorn": "45.0.2",
+    "eslint-plugin-unicorn": "48.0.1",
+    "husky": "8.0.3",
+    "istanbul-merge": "2.0.0",
     "lerna-audit": "^1.3.3",
-    "lint-staged": "13.1.2",
-    "prettier": "2.8.1",
-    "typescript": "^4.9.4",
-    "husky": "8.0.0"
+    "lint-staged": "14.0.1",
+    "nyc": "15.1.0",
+    "prettier": "2.8.8",
+    "typescript": "^5.1.6"
   },
-  "version": "1.8.1"
+  "version": "2.1.4"
 }

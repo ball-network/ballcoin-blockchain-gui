@@ -1,134 +1,161 @@
+import { alpha } from '@mui/material';
 import { createTheme } from '@mui/material/styles';
+
+import Color from '../constants/Color';
 
 import theme from './default';
 
-export default createTheme({
-  ...theme,
-  palette: {
-    ...theme.palette,
-    background: {
-      ...theme.palette.background,
-      default: '#212121',
-      paper: '#333333',
-      card: 'rgba(255, 255, 255, 0.08)',
+export default createTheme(
+  {
+    ...theme,
+    palette: {
+      ...theme.palette,
+      background: {
+        ...theme.palette.background,
+        default: Color.Neutral[900],
+        paper: Color.Neutral[900],
+        card: alpha(Color.Neutral[50], 0.08),
+      },
+      secondary: {
+        ...theme.palette.secondary,
+        main: Color.Neutral[50], // balance text, confirmation text in tx table
+        contrastText: Color.Neutral[900],
+      },
+      info: {
+        ...theme.palette.info,
+        main: Color.Neutral[400],
+      },
+      text: {
+        primary: Color.Text.Dark.Primary,
+        secondary: Color.Text.Dark.Secondary,
+        disabled: Color.Text.Dark.Disabled,
+      },
+      sidebarBackground: theme.palette.sidebarBackground.dark,
+
+      colors: {
+        royal: {
+          main: Color.Royal[300],
+          border: Color.Royal[700],
+          accent: Color.Royal[800],
+        },
+        grape: {
+          main: Color.Grape[400],
+          border: Color.Grape[700],
+          accent: Color.Grape[800],
+        },
+        purple: {
+          main: Color.Purple[300],
+          border: Color.Purple[700],
+          accent: Color.Purple[800],
+        },
+        red: {
+          main: Color.Red[300],
+          border: Color.Red[700],
+          accent: Color.Red[800],
+        },
+        orange: {
+          main: Color.Orange[300],
+          border: Color.Orange[700],
+          accent: Color.Orange[800],
+        },
+        yellow: {
+          main: Color.Yellow[400],
+          border: Color.Yellow[700],
+          accent: Color.Yellow[800],
+        },
+        lime: {
+          main: Color.Lime[400],
+          border: Color.Lime[700],
+          accent: Color.Lime[800],
+        },
+        green: {
+          main: Color.Green[300],
+          border: Color.Green[700],
+          accent: Color.Green[800],
+        },
+        aqua: {
+          main: Color.Aqua[300],
+          border: Color.Aqua[700],
+          accent: Color.Aqua[800],
+        },
+        blue: {
+          main: Color.Blue[300],
+          border: Color.Blue[700],
+          accent: Color.Blue[800],
+        },
+        comet: {
+          main: Color.Comet[500],
+          border: Color.Comet[500],
+          accent: Color.Comet[900],
+        },
+        storm: {
+          main: Color.Storm[500],
+          border: Color.Storm[700],
+          accent: Color.Storm[900],
+        },
+        wine: {
+          main: Color.Wine[500],
+          border: Color.Wine[700],
+          accent: Color.Wine[900],
+        },
+        cosmic: {
+          main: Color.Cosmic[500],
+          border: Color.Cosmic[700],
+          accent: Color.Cosmic[900],
+        },
+        sand: {
+          main: Color.Sand[500],
+          border: Color.Sand[700],
+          accent: Color.Sand[900],
+        },
+        husk: {
+          main: Color.Husk[500],
+          border: Color.Husk[700],
+          accent: Color.Husk[900],
+        },
+        bean: {
+          main: Color.Bean[500],
+          border: Color.Bean[700],
+          accent: Color.Bean[900],
+        },
+        forest: {
+          main: Color.Forest[500],
+          border: Color.Forest[700],
+          accent: Color.Forest[900],
+        },
+        ball: {
+          main: Color.Ball[500],
+          border: Color.Ball[700],
+          accent: Color.Ball[900],
+        },
+        glacier: {
+          main: Color.Glacier[500],
+          border: Color.Glacier[700],
+          accent: Color.Glacier[900],
+        },
+        default: {
+          main: Color.Neutral[600],
+          border: Color.Neutral[600],
+          accent: Color.Neutral[900],
+          background: Color.Neutral[300],
+          backgroundBadge: Color.Neutral[600],
+          backgroundLight: Color.Neutral[700],
+          text: Color.Neutral[200],
+        },
+      },
+      mode: 'dark',
     },
-    secondary: {
-      ...theme.palette.secondary,
-      main: '#ffffff',
-      contrastText: '#000000',
-    },
-    info: {
-      ...theme.palette.info,
-      main: '#fff',
-    },
-    sidebarBackground: theme.palette.sidebarBackground.dark,
-    colors: {
-      royal: {
-        main: '#DCE6FD',
-        border: '#7EA9F8',
-        accent: '#2333AA',
-      },
-      grape: {
-        main: '#E6E7F9',
-        border: '#C3C3EE',
-        accent: '#57478C',
-      },
-      purple: {
-        main: '#F9E8FF',
-        border: '#EAACFB',
-        accent: '#7E1A8E',
-      },
-      red: {
-        main: '#FEE5E7',
-        border: '#FAA7B0',
-        accent: '#9A1739',
-      },
-      orange: {
-        main: '#FFEAC6',
-        border: '#FFAF3A',
-        accent: '#94280C',
-      },
-      yellow: {
-        main: '#FEFFBD',
-        border: '#FFF544',
-        accent: '#87590C',
-      },
-      lime: {
-        main: '#F1FFC7',
-        border: '#D4FF72',
-        accent: '#46690B',
-      },
-      green: {
-        main: '#C2F0C9',
-        border: '#5ECE71',
-        accent: '#1B4C24',
-      },
-      aqua: {
-        main: '#D1F6F2',
-        border: '#6CDCD6',
-        accent: '#195356',
-      },
-      blue: {
-        main: '#DFF2FF',
-        border: '#77D4FF',
-        accent: '#015A8B',
-      },
-      comet: {
-        main: '#ECEEF2',
-        border: '#AEB9CB',
-        accent: '#384154',
-      },
-      storm: {
-        main: '#ECECF2',
-        border: '#B1B2C8',
-        accent: '#3B3B51',
-      },
-      wine: {
-        main: '#F1ECF2',
-        border: '#C3B2C7',
-        accent: '#4E3B51',
-      },
-      cosmic: {
-        main: '#E0D5C8',
-        border: '#B19176',
-        accent: '#603B4B',
-      },
-      sand: {
-        main: '#F0EBE4',
-        border: '#CCB9A5',
-        accent: '#694C43',
-      },
-      husk: {
-        main: '#F2F2E2',
-        border: '#D2CE9F',
-        accent: '#705F3C',
-      },
-      bean: {
-        main: '#E9EBDC',
-        border: '#BCC294',
-        accent: '#42472D',
-      },
-      forest: {
-        main: '#E4E9E2',
-        border: '#9BAE98',
-        accent: '#2B3A2B',
-      },
-      sea: {
-        main: '#DDEAE7',
-        border: '#9FC0BC',
-        accent: '#2D4242',
-      },
-      glacier: {
-        main: '#CCDDE1',
-        border: '#95B0B7',
-        accent: '#2E3E4B',
-      },
-      default: {
-        main: '#F1F7F9',
-        border: '#CCDDE1',
-        accent: '#1E353B',
-      },
-    },
-    mode: 'dark',
   },
-});
+  {
+    components: {
+      ...theme.components,
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: Color.Neutral[700],
+          },
+        },
+      },
+    },
+  }
+);

@@ -1,8 +1,6 @@
 type FoliageBlockData = {
   extensionData: string;
   farmerRewardPuzzleHash: string;
-  communityRewardPuzzleHash: string;
-  timelordFeePuzzleHash: string;
   poolSignature: string | null;
   poolTarget: {
     maxHeight: number;

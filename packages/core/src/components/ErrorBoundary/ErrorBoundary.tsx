@@ -52,7 +52,7 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       const { stacktrace, error } = this.state;
-      const issueLink = `https://github.com/Ball-Network/ballcoin-blockchain-gui/issues/new?${qs.stringify({
+      const issueLink = `https://github.com/ball-network/ballcoin-blockchain-gui/issues/new?${qs.stringify({
         labels: 'bug',
         template: 'bug_report.yaml',
         title: `[BUG] ${error.message}`,

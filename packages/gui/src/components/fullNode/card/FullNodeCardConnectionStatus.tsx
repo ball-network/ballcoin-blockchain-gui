@@ -1,11 +1,12 @@
 import { ServiceName } from '@ball-network/api';
-import { useService } from '@ball-network/api-react';
 import { CardSimple } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import React from 'react';
 
+import useIsServiceRunning from '../../../hooks/useIsServiceRunning';
+
 export default function FullNodeCardConnectionStatus() {
-  const { isRunning, isLoading, error } = useService(ServiceName.FULL_NODE);
+  const { isRunning, isLoading, error } = useIsServiceRunning(ServiceName.FULL_NODE);
 
   return (
     <CardSimple

@@ -1,8 +1,8 @@
 import { fromBech32m } from '@ball-network/api';
 import { useGetDIDQuery, useGetDIDNameQuery, useSetDIDNameMutation } from '@ball-network/api-react';
-import { CopyToClipboard, Flex, Suspender, Tooltip, truncateValue } from '@ball-network/core';
+import { Color, CopyToClipboard, Flex, Loading, Tooltip, truncateValue } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
-import { Box, Card, TextField, Typography } from '@mui/material';
+import { alpha, Box, Card, TextField, Typography } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
@@ -21,7 +21,7 @@ const StyledCard = styled(Card)(
 
 const StyledTitle = styled(Box)`
   font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: ${alpha(Color.Neutral[50], 0.7)};
 `;
 
 const StyledValue = styled(Box)`
@@ -65,12 +65,17 @@ function InlineEdit({ text, walletId }) {
 }
 
 export default function ProfileView() {
-  const { walletId } = useParams();
-  const { data: did, isLoading } = useGetDIDQuery({ walletId });
-  const { data: didName, loading } = useGetDIDNameQuery({ walletId });
+  const { walletId } = useParams<{
+    walletId: string;
+  }>();
 
-  if (isLoading || loading) {
-    return <Suspender />;
+  const { data: did, isLoading: isLoadingDID } = useGetDIDQuery({ walletId: Number(walletId) });
+  const { data: didName, isLoading: isLoadingDIDName } = useGetDIDNameQuery({ walletId: Number(walletId) });
+
+  const isLoading = isLoadingDID || isLoadingDIDName;
+
+  if (isLoading) {
+    return <Loading center />;
   }
 
   if (did && didName) {
@@ -81,7 +86,7 @@ export default function ProfileView() {
 
     return (
       <div style={{ width: '100%' }}>
-        <StyledCard sx={{ marginTop: '-16px' }}>
+        <StyledCard>
           <Flex flexDirection="column" gap={2.5} paddingBottom={3}>
             <InlineEdit text={nameText} walletId={walletId} />
           </Flex>
@@ -132,5 +137,6 @@ export default function ProfileView() {
       </div>
     );
   }
+
   return null;
 }

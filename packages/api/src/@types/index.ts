@@ -1,3 +1,4 @@
+export type { default as AutoClaim } from './AutoClaim';
 export type { default as Block } from './Block';
 export type { default as BlockchainConnection } from './BlockchainConnection';
 export type { default as BlockchainState } from './BlockchainState';
@@ -8,14 +9,16 @@ export type { default as CalculateRoyaltiesResponse } from './CalculateRoyalties
 export type { default as CATToken } from './CATToken';
 export type { default as Challenge } from './Challenge';
 export type { default as Coin } from './Coin';
+export type { default as Coin2 } from './Coin2';
 export type { default as CoinSolution } from './CoinSolution';
 export type { default as Connection } from './Connection';
 export type { default as FarmingInfo } from './FarmingInfo';
+export type { default as NewFarmingInfo } from './NewFarmingInfo';
 export type { default as Fingerprint } from './Fingerprint';
 export type { default as Foliage } from './Foliage';
 export type { default as FoliageTransactionBlock } from './FoliageTransactionBlock';
 export type { default as G2Element } from './G2Element';
-export type { default as Harveste, HarvesterSummary } from './Harvester';
+export type { default as HarvesterInfo, HarvesterSummary } from './Harvester';
 export type { default as HarvesterPlotsPaginated } from './HarvesterPlotsPaginated';
 export type { default as Header } from './Header';
 export type { default as InitialTargetState } from './InitialTargetState';
@@ -32,6 +35,7 @@ export type {
   OfferSummaryCATInfo,
   OfferSummaryInfos,
   OfferSummaryNFTInfo,
+  OfferSummaryValidTimes,
 } from './OfferSummaryRecord';
 export type { default as OfferTradeRecord } from './OfferTradeRecord';
 export type { default as Peak } from './Peak';
@@ -47,6 +51,7 @@ export type { default as PoolState } from './PoolState';
 export type { default as PoolWalletStatus } from './PoolWalletStatus';
 export type { default as Program } from './Program';
 export type { default as ProofOfSpace } from './ProofOfSpace';
+export type { default as PuzzleDecorator } from './PuzzleDecorator';
 export type { default as ProofsOfSpace } from './ProofsOfSpace';
 export type { default as RewardTargets } from './RewardTargets';
 export type { default as RoyaltyCalculationFungibleAsset } from './RoyaltyCalculationFungibleAsset';
@@ -64,3 +69,6 @@ export type { default as Transaction } from './Transaction';
 export type { default as UnconfirmedPlotNFT } from './UnconfirmedPlotNFT';
 export type { default as Wallet } from './Wallet';
 export type { default as WalletBalance } from './WalletBalance';
+export type { default as WalletCreate, WalletCreatePool } from './WalletCreate';
+export type { default as AutoWithdrawStake } from './AutoWithdrawStake';
+export type { default as StakeValue } from './StakeValue';

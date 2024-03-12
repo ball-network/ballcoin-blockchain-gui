@@ -1,8 +1,8 @@
 import { useGetCurrentAddressQuery, useGetNextAddressMutation } from '@ball-network/api-react';
-import { Flex, Loading, truncateValue, useColorModeValue } from '@ball-network/core';
+import { Color, Flex, Loading, truncateValue, useColorModeValue } from '@ball-network/core';
 import { Reload } from '@ball-network/icons';
 import { Trans } from '@lingui/macro';
-import { Button, IconButton, Tooltip, Typography } from '@mui/material';
+import { alpha, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { useTimeout } from 'react-use-timeout';
@@ -11,7 +11,7 @@ import styled from 'styled-components';
 const ReloadIconSvg = styled(Reload)`
   path {
     fill: none;
-    stroke: ${(props) => (props.isDarkMode ? props.theme.palette.common.white : props.theme.palette.sidebarIcon)};
+    stroke: ${({ theme }) => useColorModeValue(theme, 'sidebarIcon')};
   }
 `;
 
@@ -27,7 +27,7 @@ const WalletReceiveAddressWrapper = styled.div`
     border: 1px solid
       ${(props) => (props.isDarkMode ? props.theme.palette.border.dark : props.theme.palette.border.main)};
     border-radius: 4px;
-    background: ${(props) => (props.isDarkMode ? '#333' : '#f4f4f4')};
+    background: ${(props) => (props.isDarkMode ? Color.Neutral[800] : Color.Neutral[100])};
   }
   > .MuiButton-root:hover {
     background: ${({ theme }) => useColorModeValue(theme, 'sidebarBackground')};
@@ -42,7 +42,7 @@ const WalletReceiveAddressWrapper = styled.div`
     padding: 3px 5px;
   }
   fieldSet {
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: 1px solid ${alpha(Color.Neutral[900], 0.15)};
   }
 `;
 
@@ -99,7 +99,7 @@ export default function WalletReceiveAddressField(props: WalletReceiveAddressPro
   return (
     <WalletReceiveAddressWrapper isDarkMode={props?.isDarkMode}>
       <Tooltip title={tooltipTitle}>
-        <Button onClick={handleCopyToClipboard} variant="text" sx={{ textTransform: 'none' }}>
+        <Button onClick={handleCopyToClipboard} variant="text" sx={{ textTransform: 'none', flexGrow: 1 }}>
           <Typography variant="body1" color="primary">
             {rejoinedPrefix}
           </Typography>

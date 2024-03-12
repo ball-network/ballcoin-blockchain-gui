@@ -6,8 +6,8 @@ import useWalletConnectPreferences from './useWalletConnectPreferences';
 const defaultMetadata = {
   name: 'BallCoin Blockchain',
   description: 'GUI for BallCoin Blockchain',
-  url: 'https://www.ballcoin.top',
-  icons: ['https://www.ballcoin.top/wp-content/uploads/2022/09/ball-logo.svg'],
+  url: 'https://www.ballcoin.vip',
+  icons: ['https://www.ballcoin.vip/wp-content/uploads/2022/09/ball-logo.svg'],
 };
 
 export type UseWalletConnectConfig = {

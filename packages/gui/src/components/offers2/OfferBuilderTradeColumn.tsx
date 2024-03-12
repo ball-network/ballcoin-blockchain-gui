@@ -1,10 +1,12 @@
-import { Flex } from '@ball-network/core';
+import { Color, Flex } from '@ball-network/core';
 import { Offering, Requesting } from '@ball-network/icons';
 import { Trans } from '@lingui/macro';
+import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { useWatch } from 'react-hook-form';
 
 import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
+
 import OfferBuilderFeeSection from './OfferBuilderFeeSection';
 import OfferBuilderHeader from './OfferBuilderHeader';
 import OfferBuilderNFTSection from './OfferBuilderNFTSection';
@@ -50,7 +52,7 @@ function getSubTitle(offeringParam = false, viewer = false, isMyOffer = false) {
 function getIcon(offeringParam = false, isMyOffer = false) {
   const offering = isMyOffer ? !offeringParam : offeringParam;
 
-  return offering ? <Offering fontSize="large" /> : <Requesting fontSize="large" />;
+  return offering ? <Offering fontSize="large" color="info" /> : <Requesting fontSize="large" color="info" />;
 }
 
 export type OfferBuilderTradeColumnProps = {
@@ -63,6 +65,7 @@ export type OfferBuilderTradeColumnProps = {
 export default function OfferBuilderTradeColumn(props: OfferBuilderTradeColumnProps) {
   const { name, offering = false, viewer = false, isMyOffer = false } = props;
   const { readOnly } = useOfferBuilderContext();
+  const theme = useTheme();
 
   const ball = useWatch({
     name: `${name}.ball`,
@@ -98,9 +101,9 @@ export default function OfferBuilderTradeColumn(props: OfferBuilderTradeColumnPr
         gap={1}
         sx={{
           borderRadius: 2,
-          backgroundColor: 'action.hover',
+          backgroundColor: theme.palette.mode === 'light' ? Color.Neutral[200] : Color.Neutral[800],
           border: '1px solid',
-          borderColor: 'divider',
+          borderColor: theme.palette.mode === 'light' ? Color.Neutral[300] : Color.Neutral[600],
           padding: 1,
         }}
       >

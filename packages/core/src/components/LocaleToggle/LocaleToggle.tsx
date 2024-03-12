@@ -36,7 +36,7 @@ export default function LocaleToggle(props) {
   function handleHelpTranslate() {
     handleClose();
 
-    openExternal('https://github.com/Ball-Network/ballcoin-blockchain-gui/tree/main/src/locales/README.md');
+    openExternal('https://github.com/ball-network/ballcoin-blockchain-gui/tree/main/src/locales/README.md');
   }
 
   const localeData = useMemo(() => locales.find((item) => item.locale === currentLocale), [currentLocale, locales]);

@@ -15,11 +15,12 @@ export type AssetIdMapEntry = {
 };
 
 export default function useAssetIdName() {
-  const { data: wallets = [], isLoading: isLoadingWallets } = useGetWalletsQuery();
-  const { data: catList = [], isLoading: isCatListLoading } = useGetCatListQuery();
+  const { data: wallets = [], isLoading: isLoadingWallets, error: errorWallets } = useGetWalletsQuery();
+  const { data: catList = [], isLoading: isCatListLoading, error: errorCatList } = useGetCatListQuery();
   const currencyCode = useCurrencyCode();
 
   const isLoading = isLoadingWallets || isCatListLoading;
+  const error = errorWallets || errorCatList;
 
   const memoized = useMemo(() => {
     const assetIdNameMapping = new Map<string, AssetIdMapEntry>();
@@ -42,7 +43,7 @@ export default function useAssetIdName() {
         name = 'Ball';
         symbol = currencyCode;
         isVerified = true;
-      } else if (walletType === WalletType.CAT) {
+      } else if ([WalletType.CAT, WalletType.CRCAT].includes(walletType)) {
         const lowercaseTail = wallet.meta.assetId.toLowerCase();
         const cat = catList.find((catItem: CATToken) => catItem.assetId.toLowerCase() === lowercaseTail);
 
@@ -125,5 +126,5 @@ export default function useAssetIdName() {
     [ref]
   );
 
-  return { lookupByAssetId, lookupByWalletId, isLoading };
+  return { lookupByAssetId, lookupByWalletId, isLoading, error };
 }

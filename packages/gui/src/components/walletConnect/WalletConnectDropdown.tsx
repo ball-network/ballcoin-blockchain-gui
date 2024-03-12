@@ -5,6 +5,7 @@ import { Box, Button } from '@mui/material';
 import React from 'react';
 
 import useWalletConnectContext from '../../hooks/useWalletConnectContext';
+
 import WalletConnectConnections from './WalletConnectConnections';
 
 export default function WalletConnectDropdown() {
@@ -12,8 +13,9 @@ export default function WalletConnectDropdown() {
 
   const ButtonStyle = {
     minWidth: 0,
-    height: '42px',
-    borderRadius: 2,
+    width: '40px',
+    minHeight: '40px',
+    borderRadius: '8px',
   };
 
   const color = enabled && !isLoading && pairs.get().length > 0 ? 'primary' : 'info';

@@ -3,6 +3,7 @@ import { store, walletApi } from '@ball-network/api-react';
 import BigNumber from 'bignumber.js';
 
 import type Driver from '../@types/Driver';
+
 import { launcherIdFromNFTId } from './nfts';
 
 export async function prepareNFTOfferFromNFTId(nftId: string, offeredNFT: boolean) {
@@ -14,7 +15,7 @@ export async function prepareNFTOfferFromNFTId(nftId: string, offeredNFT: boolea
   // Adding a cache subscription
   const resultPromise = store.dispatch(
     walletApi.endpoints.getNFTInfo.initiate({
-      coinId: launcherId ?? '',
+      coinId: launcherId,
     })
   );
 
@@ -35,7 +36,7 @@ export async function prepareNFTOfferFromNFTId(nftId: string, offeredNFT: boolea
   return prepareNFTOffer(nft, offeredNFT);
 }
 
-export default function prepareNFTOffer(nft: NFTInfo, offeredNFT: boolean) {
+export function prepareNFTOffer(nft: NFTInfo, offeredNFT: boolean) {
   const driver: Driver = {
     type: 'singleton',
     launcher_id: nft.launcherId,

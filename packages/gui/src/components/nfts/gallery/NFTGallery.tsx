@@ -1,7 +1,17 @@
 // eslint-ignore-file - in progress
 import type { NFTInfo } from '@ball-network/api';
 import { useLocalStorage } from '@ball-network/api-react';
-import { Button, FormatLargeNumber, Flex, LayoutDashboardSub, Tooltip, usePersistState } from '@ball-network/core';
+import {
+  Button,
+  Color,
+  FormatLargeNumber,
+  Flex,
+  LayoutDashboardSub,
+  Tooltip,
+  usePersistState,
+  Mute,
+  ScrollbarVirtuoso,
+} from '@ball-network/core';
 import { t, Trans } from '@lingui/macro';
 import { FilterList as FilterListIcon, LibraryAddCheck as LibraryAddCheckIcon } from '@mui/icons-material';
 import {
@@ -15,6 +25,7 @@ import {
   Typography,
   IconButton,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/styles';
 import { xor, intersection /* , sortBy */ } from 'lodash';
 import React, { useMemo, useCallback, useRef, useEffect } from 'react';
@@ -30,6 +41,7 @@ import LabelProgress from '../../helpers/LabelProgress';
 import NFTCard from '../NFTCard';
 import { NFTContextualActionTypes } from '../NFTContextualActions';
 import NFTProfileDropdown from '../NFTProfileDropdown';
+
 import FilterPill from './FilterPill';
 import NFTGalleryHero from './NFTGalleryHero';
 import Search from './NFTGallerySearch';
@@ -67,18 +79,16 @@ const ListContainer = styled('div')({
   paddingRight: 16,
 });
 
-const Mute = styled('span')(({ theme }) => ({
-  color: theme.palette.text.secondary,
-}));
-
 const COMPONENTS = {
   Item: ItemContainer,
   List: ListContainer,
+  Scroller: ScrollbarVirtuoso,
 };
 
 export const defaultCacheSizeLimit = 1024; /* MB */
 
 export default function NFTGallery() {
+  const theme: any = useTheme();
   const {
     nfts,
     isLoading,
@@ -260,19 +270,19 @@ export default function NFTGallery() {
                   backgroundColor: 'background.paper',
                   paddingX: 1,
                   borderRadius: 1,
-                  borderColor: 'action.focus',
+                  borderColor: theme.palette.mode === 'dark' ? Color.Neutral[700] : Color.Neutral[300],
                   borderWidth: 1,
                   borderStyle: 'solid',
                 }}
               >
                 <Tooltip title={<Trans>Multi-select</Trans>} placement="top">
                   <IconButton onClick={toggleMultipleSelection} color={inMultipleSelectionMode ? 'primary' : undefined}>
-                    <LibraryAddCheckIcon />
+                    <LibraryAddCheckIcon color="info" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={<Trans>Filter</Trans>} placement="top">
                   <IconButton onClick={toggleShowFilters} color={showFilters ? 'primary' : undefined}>
-                    <FilterListIcon />
+                    <FilterListIcon color="info" />
                   </IconButton>
                 </Tooltip>
               </Flex>
@@ -441,17 +451,19 @@ export default function NFTGallery() {
       {!nfts?.length && !isLoading ? (
         <NFTGalleryHero />
       ) : (
-        <Box sx={{ height: '100%', marginLeft: -3, marginRight: -3 }}>
-          <VirtuosoGrid
-            style={{ height: '100%' }}
-            data={nfts}
-            overscan={2000}
-            computeItemKey={(_index, nft) => nft.launcherId}
-            components={COMPONENTS}
-            itemContent={renderNFTCard}
-            scrollerRef={handleScrollRef}
-            isScrolling={handleScrolling}
-          />
+        <Box sx={{ flexGrow: 1, position: 'relative', marginLeft: -3, marginRight: -3 }}>
+          <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: 0 }}>
+            <VirtuosoGrid
+              style={{ height: '100%' }}
+              data={nfts}
+              overscan={2000}
+              computeItemKey={(_index, nft) => nft.launcherId}
+              components={COMPONENTS}
+              itemContent={renderNFTCard}
+              scrollerRef={handleScrollRef}
+              isScrolling={handleScrolling}
+            />
+          </Box>
         </Box>
       )}
     </LayoutDashboardSub>

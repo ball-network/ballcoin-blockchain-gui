@@ -1,8 +1,9 @@
 import { useGetLoggedInFingerprintQuery, useGetPlottersQuery } from '@ball-network/api-react';
-import { useCurrencyCode, Suspender } from '@ball-network/core';
+import { useCurrencyCode, Loading } from '@ball-network/core';
 import React from 'react';
 
 import useUnconfirmedPlotNFTs from '../../../hooks/useUnconfirmedPlotNFTs';
+
 import PlotAddForm from './PlotAddForm';
 
 export default function PlotAdd() {
@@ -14,7 +15,7 @@ export default function PlotAdd() {
   const isLoading = isLoadingFingerprint || isLoadingPlotters || !currencyCode || isLoadingUnconfirmedPlotNFTs;
 
   if (isLoading) {
-    return <Suspender />;
+    return <Loading center />;
   }
 
   return <PlotAddForm currencyCode={currencyCode} fingerprint={fingerprint} plotters={plotters} />;

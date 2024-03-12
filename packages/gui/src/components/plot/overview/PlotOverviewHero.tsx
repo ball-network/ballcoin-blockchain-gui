@@ -33,7 +33,7 @@ export default function PlotOverviewHero() {
           <Typography variant="body1">
             <Trans>
               Plots are allocated space on your hard drive used to farm and earn Ball. &nbsp;
-              <Link target="_blank" href="https://github.com/Ball-Network/ballcoin-blockchain/wiki/Network-Architecture">
+              <Link target="_blank" href="https://github.com/Chia-Network/chia-blockchain/wiki/Network-Architecture">
                 Learn more
               </Link>
             </Trans>

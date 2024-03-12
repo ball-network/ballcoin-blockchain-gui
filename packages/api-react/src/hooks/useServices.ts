@@ -12,10 +12,10 @@ type Options = {
 function getServiceKeepState(service: ServiceNameValue, options: Options): ServiceState | undefined {
   const { keepRunning, keepStopped } = options;
   if (keepRunning && keepRunning.includes(service)) {
-    return 'running';
+    return ServiceState.RUNNING;
   }
   if (keepStopped && keepStopped.includes(service)) {
-    return 'stopped';
+    return ServiceState.STOPPED;
   }
   return undefined;
 }
@@ -25,13 +25,19 @@ function getServiceDisabled(service: ServiceNameValue, services: ServiceNameValu
   return disabled || !services.includes(service);
 }
 
+function getServiceNoWait(service: ServiceNameValue, _options: Options) {
+  return ([ServiceName.DATALAYER_SERVER] as ServiceNameValue[]).includes(service);
+}
+
 function getServiceOptions(service: ServiceNameValue, services: ServiceNameValue[], options: Options) {
   const keepState = getServiceKeepState(service, options);
   const disabled = getServiceDisabled(service, services, options);
+  const noWait = getServiceNoWait(service, options);
 
   return {
     keepState,
     disabled,
+    noWait,
   };
 }
 
@@ -68,7 +74,6 @@ export default function useMonitorServices(
 
   const datalayerServerState = useService(ServiceName.DATALAYER_SERVER, {
     ...getServiceOptions(ServiceName.DATALAYER_SERVER, services, options),
-    disableWait: true,
   });
 
   const states = [
@@ -87,9 +92,9 @@ export default function useMonitorServices(
   const isLoading = !!states.find((state) => state.isLoading);
   const error = states.find((state) => state.error)?.error;
 
-  const starting = states.filter((state) => state.state === 'starting').map((state) => state.service);
-  const stopping = states.filter((state) => state.state === 'stopping').map((state) => state.service);
-  const running = states.filter((state) => state.state === 'running').map((state) => state.service);
+  const starting = states.filter((state) => state.state === ServiceState.STARTING).map((state) => state.service);
+  const stopping = states.filter((state) => state.state === ServiceState.STOPPING).map((state) => state.service);
+  const running = states.filter((state) => state.state === ServiceState.RUNNING).map((state) => state.service);
 
   const objectToReturn = {
     isLoading,

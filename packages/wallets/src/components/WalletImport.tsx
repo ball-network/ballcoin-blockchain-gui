@@ -1,5 +1,5 @@
 import { english } from '@ball-network/api';
-import { useAddPrivateKeyMutation, useLogInMutation } from '@ball-network/api-react';
+import { useAddPrivateKeyMutation } from '@ball-network/api-react';
 import {
   AlertDialog,
   Autocomplete,
@@ -11,6 +11,7 @@ import {
   useOpenDialog,
   useTrans,
   TextField,
+  useAuth,
 } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import { Typography, Container, Grid } from '@mui/material';
@@ -39,7 +40,7 @@ type FormData = {
 export default function WalletImport() {
   const navigate = useNavigate();
   const [addPrivateKey] = useAddPrivateKeyMutation();
-  const [logIn] = useLogInMutation();
+  const { logIn } = useAuth();
   const trans = useTrans();
   const openDialog = useOpenDialog();
   const [mnemonicPasteOpen, setMnemonicPasteOpen] = React.useState(false);
@@ -125,9 +126,7 @@ export default function WalletImport() {
       ...(label && { label: label.trim() }), // omit `label` if label is undefined/empty. backend returns an error if label is set and undefined/empty
     }).unwrap();
 
-    await logIn({
-      fingerprint,
-    }).unwrap();
+    await logIn(fingerprint);
 
     navigate('/dashboard/wallets/1');
   }

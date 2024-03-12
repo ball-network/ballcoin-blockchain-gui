@@ -5,13 +5,15 @@ import { Badge, Box, Button } from '@mui/material';
 import React from 'react';
 
 import useNotifications from '../../hooks/useNotifications';
+
 import NotificationsMenu from './NotificationsMenu';
 
 const buttonStyle = (theme) => ({
   minWidth: 0,
-  borderRadius: 2,
+  borderRadius: '8px',
   borderColor: theme.palette.mode === 'dark' ? 'border.dark' : 'border.main',
-  height: '42px',
+  width: '40px',
+  minHeight: '40px',
   '&:hover': {
     borderColor: theme.palette.mode === 'dark' ? 'border.dark' : 'border.main',
   },
@@ -43,7 +45,7 @@ export default function NotificationsDropdown() {
         </Button>,
         <Box sx={{ minWidth: 360 }}>
           <Tooltip title={<Trans>Activity</Trans>}>
-            <NotificationsMenu onClose={onClose} size={3} />
+            <NotificationsMenu onClose={onClose} size={5} />
           </Tooltip>
         </Box>,
       ]}

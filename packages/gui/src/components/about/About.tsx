@@ -72,7 +72,7 @@ const Spacer = styled.div`
   margin-bottom: 1rem;
 `;
 
-const url = 'https://ballcoin.top';
+const url = 'https://ballcoin.vip';
 
 type Props = {
   version: string;
@@ -144,7 +144,7 @@ export default function About(props: Props) {
           )}
         </VersionsTable>
 
-        <BugReport href="https://github.com/Ball-Network/ballcoin-blockchain/issues" target="_blank">
+        <BugReport href="https://github.com/ball-network/ballcoin-blockchain/issues" target="_blank">
           Report an issue
         </BugReport>
         {'{{CSS}}'}

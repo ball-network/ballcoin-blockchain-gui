@@ -1,11 +1,12 @@
 import { WalletType } from '@ball-network/api';
-import { Suspender } from '@ball-network/core';
+import { Loading } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import { Alert } from '@mui/material';
 import React from 'react';
 import { useParams } from 'react-router-dom';
 
 import useWallet from '../hooks/useWallet';
+
 import WalletCAT from './cat/WalletCAT';
 import WalletStandard from './standard/WalletStandard';
 
@@ -13,7 +14,7 @@ export default function Wallet() {
   const { walletId } = useParams();
   const { wallet, loading } = useWallet(walletId);
   if (loading) {
-    return <Suspender />;
+    return <Loading center />;
   }
 
   if (!wallet) {
@@ -28,7 +29,7 @@ export default function Wallet() {
     return <WalletStandard walletId={Number(walletId)} />;
   }
 
-  if (wallet.type === WalletType.CAT) {
+  if ([WalletType.CAT, WalletType.CRCAT].includes(wallet.type)) {
     return <WalletCAT walletId={Number(walletId)} />;
   }
 

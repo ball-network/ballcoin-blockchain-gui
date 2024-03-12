@@ -11,11 +11,9 @@ import {
   Flex,
   calculatePoolReward,
   calculateBaseFarmerReward,
-  calculateCommunityReward,
-  calculateTimelordFee,
   useCurrencyCode,
   mojoToBall,
-  Suspender,
+  Loading,
 } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import { Alert, Paper, TableRow, Table, TableBody, TableCell, TableContainer } from '@mui/material';
@@ -23,34 +21,25 @@ import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import { hexToArray, arrToHex, sha256} from '../../util/utils';
+import { hexToArray, arrToHex, sha256 } from '../../util/utils';
+
 import BlockTitle from './BlockTitle';
 
-async function computeNewPlotId(block, plotPublicKey) {
-  const { poolPublicKey } = block.rewardChainBlock.proofOfSpace;
+async function computeNewPlotId(block) {
+  const { poolPublicKey, plotPublicKey } = block.rewardChainBlock.proofOfSpace;
   if (!poolPublicKey || !plotPublicKey) {
     return undefined;
   }
   let buf = hexToArray(poolPublicKey);
-  buf = buf.concat(plotPublicKey);
+  buf = buf.concat(hexToArray(plotPublicKey));
   const bufHash = await sha256(buf);
   return arrToHex(bufHash);
-}
-
-async function computePlotPublicKey(block) {
-  const { localPublicKey, farmerPublicKey, poolContractPuzzleHash } = block.rewardChainBlock.proofOfSpace;
-  if (!localPublicKey) {
-    return undefined;
-  }
-  return undefined;
-  // return await getPlotPublicKey(localPublicKey, farmerPublicKey, poolContractPuzzleHash)
 }
 
 export default function Block() {
   const { headerHash } = useParams();
   const navigate = useNavigate();
   const [newPlotId, setNewPlotId] = useState();
-  const [plotPublicKey, setPlotPublicKey] = useState();
   const [nextSubBlocks, setNextSubBlocks] = useState([]);
   const currencyCode = useCurrencyCode();
 
@@ -85,13 +74,8 @@ export default function Block() {
 
   async function updateNewPlotId(blockLocal) {
     if (blockLocal) {
-      const plotPK = await computePlotPublicKey(blockLocal);
-      if(plotPK) {
-        setPlotPublicKey(arrToHex(await sha256(plotPK)));
-      }
-      setNewPlotId(await computeNewPlotId(blockLocal, plotPK));
+      setNewPlotId(await computeNewPlotId(blockLocal));
     } else {
-      setPlotPublicKey(undefined);
       setNewPlotId(undefined);
     }
   }
@@ -126,7 +110,7 @@ export default function Block() {
   }
 
   if (isLoading) {
-    return <Suspender />;
+    return <Loading center />;
   }
 
   if (error) {
@@ -164,8 +148,6 @@ export default function Block() {
 
   const poolReward = mojoToBall(calculatePoolReward(blockRecord.height));
   const baseFarmerReward = mojoToBall(calculateBaseFarmerReward(blockRecord.height));
-  const communityReward = mojoToBall(calculateCommunityReward(blockRecord.height));
-  const timelordReward = mojoToBall(calculateTimelordFee(blockRecord.height));
 
   const ballFees = blockRecord.fees !== undefined ? mojoToBall(blockRecord.fees) : '';
 
@@ -223,7 +205,7 @@ export default function Block() {
     },
     {
       name: <Trans>Plot Public Key</Trans>,
-      value: plotPublicKey,
+      value: block.rewardChainBlock.proofOfSpace.plotPublicKey,
     },
     {
       name: <Trans>Pool Public Key</Trans>,
@@ -259,14 +241,6 @@ export default function Block() {
       value: ballFees ? `${ballFees} ${currencyCode}` : '',
       tooltip: <Trans>The total transactions fees in this block. Rewarded to the farmer.</Trans>,
     },
-    {
-      name: <Trans>Community Reward Amount</Trans>,
-      value: `${communityReward} ${currencyCode}`,
-    },
-    {
-      name: <Trans>Timelord Reward Amount</Trans>,
-      value: `${timelordReward} ${currencyCode}`,
-    },
   ];
 
   return (
@@ -274,7 +248,7 @@ export default function Block() {
       <Card
         title={
           <Back variant="h5">
-            <Trans>Block at height {blockRecord.height} in the BallCoin Blockchain</Trans>
+            <Trans>Block at height {blockRecord.height} in the BallCoin blockchain</Trans>
           </Back>
         }
         action={

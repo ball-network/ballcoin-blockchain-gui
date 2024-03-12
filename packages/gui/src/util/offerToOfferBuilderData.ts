@@ -1,14 +1,15 @@
-import { OfferSummaryRecord } from '@ball-network/api';
+import { OfferSummaryRecord, type OfferSummaryCATInfo } from '@ball-network/api';
 import { mojoToCAT, mojoToBall } from '@ball-network/core';
 import BigNumber from 'bignumber.js';
 
 import type OfferBuilderData from '../@types/OfferBuilderData';
 import type OfferSummary from '../@types/OfferSummary';
+
 import { launcherIdToNFTId } from './nfts';
 
 export default function offerToOfferBuilderData(
   offerSummary: OfferSummary | OfferSummaryRecord,
-  setDefaultOfferedFee: boolean,
+  setDefaultOfferedFee?: boolean,
   defaultFee?: string // in mojos
 ): OfferBuilderData {
   const { fees, offered, requested, infos } = offerSummary;
@@ -30,9 +31,11 @@ export default function offerToOfferBuilderData(
     const info = infos[id];
 
     if (info?.type === 'CAT') {
+      const crCat = extractCrCatData(info);
       offeredTokens.push({
         amount: mojoToCAT(amount).toFixed(),
         assetId: id,
+        crCat,
       });
     } else if (info?.type === 'singleton') {
       offeredNfts.push({
@@ -50,9 +53,11 @@ export default function offerToOfferBuilderData(
     const info = infos[id];
 
     if (info?.type === 'CAT') {
+      const crCat = extractCrCatData(info);
       requestedTokens.push({
         amount: mojoToCAT(amount).toFixed(),
         assetId: id,
+        crCat,
       });
     } else if (info?.type === 'singleton') {
       requestedNfts.push({
@@ -82,5 +87,15 @@ export default function offerToOfferBuilderData(
         },
       ],
     },
+  };
+}
+
+function extractCrCatData(info: OfferSummaryCATInfo) {
+  if (!info.also) return undefined;
+  if (info.also.type !== 'credential restricted') return undefined;
+  const { flags, authorizedProviders } = info.also;
+  return {
+    flags,
+    authorizedProviders,
   };
 }

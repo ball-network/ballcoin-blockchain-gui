@@ -12,6 +12,7 @@ import type CacheInfoBase from '../@types/CacheInfoBase';
 import type Headers from '../@types/Headers';
 import CacheState from '../constants/CacheState';
 import limit from '../util/limit';
+
 import downloadFile from './utils/downloadFile';
 import ensureDirectoryExists from './utils/ensureDirectoryExists';
 import getChecksum from './utils/getChecksum';
@@ -305,8 +306,15 @@ export default class CacheManager extends EventEmitter {
 
     const process = async (): Promise<CacheInfo> => {
       try {
-        if (!isURL(url)) {
-          throw new Error(`Invalid URL: ${url}`);
+        // From isValidURL.ts
+        // isURL returns false for URLs with unencoded spaces. We can't use
+        // encodeURI if the URL is already encoded, so we attempt to decode
+        // the URL first and then encode it if it wasn't already encoded.
+
+        const normalizedURL = decodeURI(url) === url ? encodeURI(url) : url;
+
+        if (!isURL(normalizedURL)) {
+          throw new Error(`Invalid URL: ${normalizedURL}`);
         }
 
         const cacheInfo = await this.getCacheInfoByURL(url);

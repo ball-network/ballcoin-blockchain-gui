@@ -140,7 +140,7 @@ export default function SettingsIntegration() {
           </SettingsSection>
           <SettingsText>
             <Trans>
-              WalletConnect enables a decentralized app on the BallCoin Blockchain to communicate and make requests directly
+              WalletConnect enables a decentralized app on the BallCoin blockchain to communicate and make requests directly
               to a Ball wallet.
             </Trans>
           </SettingsText>

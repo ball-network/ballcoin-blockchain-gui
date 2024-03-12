@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign -- This file use Immer */
-import { CAT, DID, Farmer, NFT, Pool, Staking, WalletService, WalletType, toBech32m } from '@ball-network/api';
+import { CAT, DID, Farmer, NFT, Pool, WalletService, WalletType, toBech32m, VC, Stake } from '@ball-network/api';
 import type { NFTInfo, Transaction, Wallet, WalletBalance } from '@ball-network/api';
 import BigNumber from 'bignumber.js';
 
@@ -8,38 +8,42 @@ import normalizePoolState from '../utils/normalizePoolState';
 import onCacheEntryAddedInvalidate from '../utils/onCacheEntryAddedInvalidate';
 import { query, mutation } from '../utils/reduxToolkitEndpointAbstractions';
 
+const tagTypes = [
+  'Address',
+  'CATWalletInfo',
+  'DID',
+  'DIDCoinInfo',
+  'DIDInfo',
+  'DIDName',
+  'DIDPubKey',
+  'DIDRecoveryInfo',
+  'DIDRecoveryList',
+  'DIDWallet',
+  'Keys',
+  'LoggedInFingerprint',
+  'NFTCount',
+  'NFTInfo',
+  'NFTRoyalties',
+  'NFTWalletWithDID',
+  'OfferCounts',
+  'OfferTradeRecord',
+  'PlotNFT',
+  'PoolWalletStatus',
+  'TransactionCount',
+  'Transactions',
+  'WalletBalance',
+  'WalletConnections',
+  'Wallets',
+  'DerivationIndex',
+  'CATs',
+  'DaemonKey',
+  'Notification',
+  'AutoClaim',
+  'AutoWithdrawStake',
+];
+
 const apiWithTag = api.enhanceEndpoints({
-  addTagTypes: [
-    'Address',
-    'CATWalletInfo',
-    'DID',
-    'DIDCoinInfo',
-    'DIDInfo',
-    'DIDName',
-    'DIDPubKey',
-    'DIDRecoveryInfo',
-    'DIDRecoveryList',
-    'DIDWallet',
-    'Keys',
-    'LoggedInFingerprint',
-    'NFTCount',
-    'NFTInfo',
-    'NFTRoyalties',
-    'NFTWalletWithDID',
-    'OfferCounts',
-    'OfferTradeRecord',
-    'PlotNFT',
-    'PoolWalletStatus',
-    'TransactionCount',
-    'Transactions',
-    'WalletBalance',
-    'WalletConnections',
-    'Wallets',
-    'DerivationIndex',
-    'CATs',
-    'DaemonKey',
-    'Notification',
-  ],
+  addTagTypes: tagTypes,
 });
 
 export const walletApi = apiWithTag.injectEndpoints({
@@ -76,7 +80,7 @@ export const walletApi = apiWithTag.injectEndpoints({
               wallets.map(async (wallet: Wallet) => {
                 const { type } = wallet;
                 const meta: any = {};
-                if (type === WalletType.CAT) {
+                if ([WalletType.CAT, WalletType.CRCAT].includes(type)) {
                   // get CAT asset
                   const { data: assetData, error: assetError } = await fetchWithBQ({
                     command: 'getAssetId',
@@ -162,6 +166,10 @@ export const walletApi = apiWithTag.injectEndpoints({
           },
         },
       ]),
+    }),
+
+    getTransactionAsync: mutation(build, WalletService, 'getTransaction', {
+      transformResponse: (response) => response.transaction,
     }),
 
     getTransactionMemo: mutation(build, WalletService, 'getTransactionMemo', {
@@ -258,6 +266,8 @@ export const walletApi = apiWithTag.injectEndpoints({
         },
       ]),
     }),
+
+    getWalletBalances: query(build, WalletService, 'getWalletBalances', {}),
 
     getFarmedAmount: query(build, WalletService, 'getFarmedAmount', {
       onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
@@ -433,7 +443,9 @@ export const walletApi = apiWithTag.injectEndpoints({
     }),
 
     logIn: mutation(build, WalletService, 'logIn', {
-      invalidatesTags: ['LoggedInFingerprint', 'Address', 'Wallets', 'Transactions', 'WalletBalance', 'Notification'],
+      // we need to use useClearCache after logIn,
+      // invalidateTags will not work because it will just do refetch and user see data from previous key until new data will be fetched
+      // invalidatesTags: tagTypes, // invalidates all tags
     }),
 
     getPrivateKey: query(build, WalletService, 'getPrivateKey', {
@@ -863,6 +875,10 @@ export const walletApi = apiWithTag.injectEndpoints({
         { type: 'Wallets', id: 'LIST' },
         { type: 'Transactions', id: 'LIST' },
       ],
+    }),
+
+    crCatApprovePending: mutation(build, CAT, 'crCatApprovePending', {
+      invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
     }),
 
     // PlotNFTs
@@ -1339,6 +1355,10 @@ export const walletApi = apiWithTag.injectEndpoints({
       providesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: result.launcherId }] : []),
     }),
 
+    mintNFT: mutation(build, NFT, 'mintNFT', {
+      invalidatesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: 'LIST' }] : []),
+    }),
+
     transferNFT: mutation(build, NFT, 'transferNft', {
       invalidatesTags: (result, _error) => (result ? [{ type: 'NFTInfo', id: 'LIST' }] : []),
     }),
@@ -1397,313 +1417,314 @@ export const walletApi = apiWithTag.injectEndpoints({
 
     verifySignature: mutation(build, WalletService, 'verifySignature'),
 
-    stakingInfo: build.query<
-      {
-        balance: number;
-        address: string;
-      },
-      {
-        fingerprint: string;
-      }
-    >({
-      query: ({ fingerprint }) => ({
-        command: 'stakingInfo',
-        service: Staking,
-        args: [fingerprint],
-      }),
-      transformResponse: (response: any) => response,
+    getVC: query(build, VC, 'getVC', {
+      transformResponse: (response) => response.vcRecord,
     }),
 
-    stakingSend: build.mutation<
-      any,
-      {
-        amount: string;
-        fingerprint: number;
-        waitForConfirmation?: boolean;
-      }
-    >({
-      async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse: any;
-
-        function unsubscribe() {
-          if (subscribeResponse) {
-            subscribeResponse.data();
-            subscribeResponse = undefined;
-          }
-        }
-
-        try {
-          const { waitForConfirmation, ...restArgs } = args;
-
-          return {
-            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
-            data: await new Promise(async (resolve, reject) => {
-              const updatedTransactions: Transaction[] = [];
-              let transactionName: string;
-
-              function processUpdates() {
-                if (!transactionName) {
-                  return;
-                }
-
-                const transaction = updatedTransactions.find((trx) => {
-                  if (trx.name !== transactionName) {
-                    return false;
-                  }
-
-                  if (!trx?.sentTo?.length) {
-                    return false;
-                  }
-
-                  const validSentTo = trx.sentTo.find((record) => {
-                    const [, , error] = record;
-
-                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
-                      return false;
-                    }
-
-                    return true;
-                  });
-
-                  return !!validSentTo;
-                });
-
-                if (transaction) {
-                  resolve({
-                    transaction,
-                    transactionId: transaction.name,
-                  });
-                }
-              }
-
-              // bind all changes related to transactions
-              if (waitForConfirmation) {
-                // subscribing to tx_updates
-                subscribeResponse = await baseQuery(
-                  {
-                    command: 'onTransactionUpdate',
-                    service: WalletService,
-                    args: [
-                      (data: any) => {
-                        const {
-                          additionalData: { transaction },
-                        } = data;
-
-                        updatedTransactions.push(transaction);
-                        processUpdates();
-                      },
-                    ],
-                  },
-                  queryApi
-                );
-              }
-
-              // make transaction
-              const { data: stakingSendData, error } = await fetchWithBQ({
-                command: 'stakingSend',
-                service: Staking,
-                args: restArgs,
-              });
-
-              if (error) {
-                reject(error);
-                return;
-              }
-
-              if (!waitForConfirmation) {
-                resolve(stakingSendData);
-                return;
-              }
-
-              const { transaction } = stakingSendData;
-              if (!transaction) {
-                reject(new Error('Transaction is not present in response'));
-                return;
-              }
-
-              transactionName = transaction.name;
-              updatedTransactions.push(transaction);
-              processUpdates();
-            }),
-          };
-        } catch (error: any) {
-          console.log('error trx', error);
-          return {
-            error,
-          };
-        } finally {
-          unsubscribe();
-        }
-      },
-      invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
+    getVCList: query(build, VC, 'getVCList', {
+      onCacheEntryAdded: onCacheEntryAddedInvalidate(baseQuery, api, [
+        {
+          command: 'onVCCoinAdded',
+          service: VC,
+          endpoint: 'getVCList',
+        },
+        {
+          command: 'onVCCoinRemoved',
+          service: VC,
+          endpoint: 'getVCList',
+        },
+      ]),
     }),
 
-    stakingWithdraw: build.mutation<
-      any,
-      {
-        amount: string;
-        fingerprint: number;
-        waitForConfirmation?: boolean;
-      }
-    >({
-      async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
-        let subscribeResponse: any;
+    spendVC: mutation(build, VC, 'spendVC'),
 
-        function unsubscribe() {
-          if (subscribeResponse) {
-            subscribeResponse.data();
-            subscribeResponse = undefined;
-          }
-        }
+    addVCProofs: mutation(build, VC, 'addVCProofs'),
 
-        try {
-          const { waitForConfirmation, ...restArgs } = args;
+    getProofsForRoot: query(build, VC, 'getProofsForRoot'),
 
-          return {
-            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
-            data: await new Promise(async (resolve, reject) => {
-              const updatedTransactions: Transaction[] = [];
-              let transactionName: string;
-
-              function processUpdates() {
-                if (!transactionName) {
-                  return;
-                }
-
-                const transaction = updatedTransactions.find((trx) => {
-                  if (trx.name !== transactionName) {
-                    return false;
-                  }
-
-                  if (!trx?.sentTo?.length) {
-                    return false;
-                  }
-
-                  const validSentTo = trx.sentTo.find((record) => {
-                    const [, , error] = record;
-
-                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
-                      return false;
-                    }
-
-                    return true;
-                  });
-
-                  return !!validSentTo;
-                });
-
-                if (transaction) {
-                  resolve({
-                    transaction,
-                    transactionId: transaction.name,
-                  });
-                }
-              }
-
-              // bind all changes related to transactions
-              if (waitForConfirmation) {
-                // subscribing to tx_updates
-                subscribeResponse = await baseQuery(
-                  {
-                    command: 'onTransactionUpdate',
-                    service: WalletService,
-                    args: [
-                      (data: any) => {
-                        const {
-                          additionalData: { transaction },
-                        } = data;
-
-                        updatedTransactions.push(transaction);
-                        processUpdates();
-                      },
-                    ],
-                  },
-                  queryApi
-                );
-              }
-
-              // make transaction
-              const { data: stakingWithdrawData, error } = await fetchWithBQ({
-                command: 'stakingWithdraw',
-                service: Staking,
-                args: restArgs,
-              });
-
-              if (error) {
-                reject(error);
-                return;
-              }
-
-              if (!waitForConfirmation) {
-                resolve(stakingWithdrawData);
-                return;
-              }
-
-              const { transaction } = stakingWithdrawData;
-              if (!transaction) {
-                reject(new Error('Transaction is not present in response'));
-                return;
-              }
-
-              transactionName = transaction.name;
-              updatedTransactions.push(transaction);
-              processUpdates();
-            }),
-          };
-        } catch (error: any) {
-          console.log('error trx', error);
-          return {
-            error,
-          };
-        } finally {
-          unsubscribe();
-        }
-      },
-      invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
+    revokeVC: mutation(build, VC, 'revokeVC'),
+    // clawback
+    setAutoClaim: mutation(build, WalletService, 'setAutoClaim', {
+      invalidatesTags: [{ type: 'AutoClaim' }],
+    }),
+    getAutoClaim: query(build, WalletService, 'getAutoClaim', {
+      providesTags: (result) => (result ? [{ type: 'AutoClaim' }] : []),
     }),
 
-    findPoolNFT: build.mutation<
-      {
-        totalAmount: number;
-        balanceAmount: number;
-        contractAddress: string;
-        recordAmount: string;
-      },
-      {
-        launcherId: string;
-        contractAddress?: string;
-      }
-    >({
-      query: ({ launcherId, contractAddress }) => {
-        return {
-        command: 'findPoolNFT',
-        service: Staking,
-        args: [launcherId, contractAddress],
-      }},
-    }),
+    spendClawbackCoins: mutation(build, WalletService, 'spendClawbackCoins'),
 
-    recoverPoolNFT: build.mutation<
-      {
-        num: number;
-        totalAmount: number;
-        amount: number;
-        status: string;
-      },
-      {
-        launcherId: string;
-        contractAddress?: string;
-      }
-    >({
-      query: ({ launcherId, contractAddress }) => {
-        return {
-        command: 'recoverPoolNFT',
-        service: Staking,
-        args: [launcherId, contractAddress],
-      }},
+
+    findPoolNFT: mutation(build, Stake, 'findPoolNFT'),
+
+    recoverPoolNFT: mutation(build, Stake, 'recoverPoolNFT', {
       invalidatesTags: [
         { type: 'Transactions', id: 'LIST' },
       ],
     }),
+
+    setAutoWithdrawStake: mutation(build, Stake, 'setAutoWithdrawStake', {
+      invalidatesTags: [{ type: 'AutoWithdrawStake' }],
+    }),
+    getAutoWithdrawStake: query(build, Stake, 'getAutoWithdrawStake', {
+      providesTags: (result) => (result ? [{ type: 'AutoWithdrawStake' }] : []),
+    }),
+
+    stakeInfo: query(build, Stake, 'stakeInfo'),
+
+    stakeSend: build.mutation<
+      any,
+      {
+        walletId: number;
+        isStakeFarm: boolean;
+        stakeType: number;
+        address: string;
+        amount: string;
+        fee: string;
+        waitForConfirmation?: boolean;
+      }
+    >({
+      async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
+        let subscribeResponse: any;
+
+        function unsubscribe() {
+          if (subscribeResponse) {
+            subscribeResponse.data();
+            subscribeResponse = undefined;
+          }
+        }
+
+        try {
+          const { waitForConfirmation, ...restArgs } = args;
+
+          return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
+            data: await new Promise(async (resolve, reject) => {
+              const updatedTransactions: Transaction[] = [];
+              let transactionName: string;
+
+              function processUpdates() {
+                if (!transactionName) {
+                  return;
+                }
+
+                const transaction = updatedTransactions.find((trx) => {
+                  if (trx.name !== transactionName) {
+                    return false;
+                  }
+
+                  if (!trx?.sentTo?.length) {
+                    return false;
+                  }
+
+                  const validSentTo = trx.sentTo.find((record) => {
+                    const [, , error] = record;
+
+                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
+                      return false;
+                    }
+
+                    return true;
+                  });
+
+                  return !!validSentTo;
+                });
+
+                if (transaction) {
+                  resolve({
+                    transaction,
+                    transactionId: transaction.name,
+                  });
+                }
+              }
+
+              // bind all changes related to transactions
+              if (waitForConfirmation) {
+                // subscribing to tx_updates
+                subscribeResponse = await baseQuery(
+                  {
+                    command: 'onTransactionUpdate',
+                    service: WalletService,
+                    args: [
+                      (data: any) => {
+                        const {
+                          additionalData: { transaction },
+                        } = data;
+
+                        updatedTransactions.push(transaction);
+                        processUpdates();
+                      },
+                    ],
+                  },
+                  queryApi
+                );
+              }
+
+              // make transaction
+              const { data: stakeSendData, error } = await fetchWithBQ({
+                command: 'stakeSend',
+                service: Stake,
+                args: restArgs,
+              });
+
+              if (error) {
+                reject(error);
+                return;
+              }
+
+              if (!waitForConfirmation) {
+                resolve(stakeSendData);
+                return;
+              }
+
+              const { transaction } = stakeSendData;
+              if (!transaction) {
+                reject(new Error('Transaction is not present in response'));
+                return;
+              }
+
+              transactionName = transaction.name;
+              updatedTransactions.push(transaction);
+              processUpdates();
+            }),
+          };
+        } catch (error: any) {
+          console.error('error trx', error);
+          return {
+            error,
+          };
+        } finally {
+          unsubscribe();
+        }
+      },
+      invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
+    }),
+
+    stakeInfoOld: query(build, Stake, 'stakeInfoOld'),
+
+    stakeWithdrawOld: build.mutation<
+      any,
+      {
+        walletId: number;
+        amount: string;
+        waitForConfirmation?: boolean;
+      }
+    >({
+      async queryFn(args, queryApi, _extraOptions, fetchWithBQ) {
+        let subscribeResponse: any;
+
+        function unsubscribe() {
+          if (subscribeResponse) {
+            subscribeResponse.data();
+            subscribeResponse = undefined;
+          }
+        }
+
+        try {
+          const { waitForConfirmation, ...restArgs } = args;
+
+          return {
+            // eslint-disable-next-line no-async-promise-executor -- Not refactoring from `new Promise` to keep consistent
+            data: await new Promise(async (resolve, reject) => {
+              const updatedTransactions: Transaction[] = [];
+              let transactionName: string;
+
+              function processUpdates() {
+                if (!transactionName) {
+                  return;
+                }
+
+                const transaction = updatedTransactions.find((trx) => {
+                  if (trx.name !== transactionName) {
+                    return false;
+                  }
+
+                  if (!trx?.sentTo?.length) {
+                    return false;
+                  }
+
+                  const validSentTo = trx.sentTo.find((record) => {
+                    const [, , error] = record;
+
+                    if (error === 'NO_TRANSACTIONS_WHILE_SYNCING') {
+                      return false;
+                    }
+
+                    return true;
+                  });
+
+                  return !!validSentTo;
+                });
+
+                if (transaction) {
+                  resolve({
+                    transaction,
+                    transactionId: transaction.name,
+                  });
+                }
+              }
+
+              // bind all changes related to transactions
+              if (waitForConfirmation) {
+                // subscribing to tx_updates
+                subscribeResponse = await baseQuery(
+                  {
+                    command: 'onTransactionUpdate',
+                    service: WalletService,
+                    args: [
+                      (data: any) => {
+                        const {
+                          additionalData: { transaction },
+                        } = data;
+
+                        updatedTransactions.push(transaction);
+                        processUpdates();
+                      },
+                    ],
+                  },
+                  queryApi
+                );
+              }
+
+              // make transaction
+              const { data: stakeWithdrawOldData, error } = await fetchWithBQ({
+                command: 'stakeWithdrawOld',
+                service: Stake,
+                args: restArgs,
+              });
+
+              if (error) {
+                reject(error);
+                return;
+              }
+
+              if (!waitForConfirmation) {
+                resolve(stakeWithdrawOldData);
+                return;
+              }
+
+              const { transaction } = stakeWithdrawOldData;
+              if (!transaction) {
+                reject(new Error('Transaction is not present in response'));
+                return;
+              }
+
+              transactionName = transaction.name;
+              updatedTransactions.push(transaction);
+              processUpdates();
+            }),
+          };
+        } catch (error: any) {
+          console.error('error trx', error);
+          return {
+            error,
+          };
+        } finally {
+          unsubscribe();
+        }
+      },
+      invalidatesTags: [{ type: 'Transactions', id: 'LIST' }],
+    }),
+
   }),
 });
 
@@ -1712,6 +1733,7 @@ export const {
   useGetLoggedInFingerprintQuery,
   useGetWalletsQuery,
   useGetTransactionQuery,
+  useGetTransactionAsyncMutation,
   useGetTransactionMemoMutation,
   useGetPwStatusQuery,
   usePwAbsorbRewardsMutation,
@@ -1720,6 +1742,7 @@ export const {
   useCreateNewWalletMutation,
   useDeleteUnconfirmedTransactionsMutation,
   useGetWalletBalanceQuery,
+  useGetWalletBalancesQuery,
   useGetFarmedAmountQuery,
   useSendTransactionMutation,
   useGenerateMnemonicMutation,
@@ -1735,6 +1758,7 @@ export const {
   useGetNextAddressMutation,
   useFarmBlockMutation,
   useGetTimestampForHeightQuery,
+  useLazyGetTimestampForHeightQuery,
   useGetHeightInfoQuery,
   useGetNetworkInfoQuery,
   useGetSyncStatusQuery,
@@ -1766,6 +1790,7 @@ export const {
   useSpendCATMutation,
   useAddCATTokenMutation,
   useGetStrayCatsQuery,
+  useCrCatApprovePendingMutation,
 
   // PlotNFTS
   useGetPlotNFTsQuery,
@@ -1793,6 +1818,7 @@ export const {
   useGetNFTWalletsWithDIDsQuery,
   useGetNFTInfoQuery,
   useLazyGetNFTInfoQuery,
+  useMintNFTMutation,
   useTransferNFTMutation,
   useSetNFTDIDMutation,
   useSetNFTStatusMutation,
@@ -1809,10 +1835,28 @@ export const {
   // verify
   useVerifySignatureMutation,
 
-  // staking
-  useStakingInfoQuery,
-  useStakingSendMutation,
-  useStakingWithdrawMutation,
+  // VC
+  useGetVCQuery,
+  useGetVCListQuery,
+  useSpendVCMutation,
+  useAddVCProofsMutation,
+  useGetProofsForRootQuery,
+  useLazyGetProofsForRootQuery,
+  useRevokeVCMutation,
+  // clawback
+  useSetAutoClaimMutation,
+  useGetAutoClaimQuery,
+  useSpendClawbackCoinsMutation,
+
+  // stake Old
+  useStakeInfoOldQuery,
+  useStakeWithdrawOldMutation,
+
+  // stake
+  useSetAutoWithdrawStakeMutation,
+  useGetAutoWithdrawStakeQuery,
+  useStakeInfoQuery,
+  useStakeSendMutation,
 
   useFindPoolNFTMutation,
   useRecoverPoolNFTMutation,

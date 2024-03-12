@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useRef } from 'react';
 
+import type Notification from '../@types/Notification';
 import { disconnectPair, bindEvents, cleanupPairings } from '../util/walletConnect';
+
 import useWalletConnectClient from './useWalletConnectClient';
 import useWalletConnectCommand from './useWalletConnectCommand';
 import useWalletConnectPairs from './useWalletConnectPairs';
@@ -16,10 +18,11 @@ export type UseWalletConnectConfig = {
     icons: string[];
   };
   debug?: boolean;
+  onNotification?: (notification: Notification) => void;
 };
 
 export default function useWalletConnect(config: UseWalletConnectConfig) {
-  const { projectId, relayUrl, metadata, debug } = config;
+  const { projectId, relayUrl, metadata, debug, onNotification } = config;
 
   const pairs = useWalletConnectPairs();
   const { client, isLoading, error } = useWalletConnectClient({
@@ -29,7 +32,9 @@ export default function useWalletConnect(config: UseWalletConnectConfig) {
     debug,
   });
 
-  const { process, isLoading: isLoadingWalletConnectCommand } = useWalletConnectCommand();
+  const { process, isLoading: isLoadingWalletConnectCommand } = useWalletConnectCommand({
+    onNotification,
+  });
   const { enabled } = useWalletConnectPreferences();
 
   const processRef = useRef(process);

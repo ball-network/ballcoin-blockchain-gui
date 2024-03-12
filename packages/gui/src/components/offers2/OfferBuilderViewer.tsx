@@ -1,4 +1,10 @@
-import { useGetWalletsQuery, useCheckOfferValidityMutation } from '@ball-network/api-react';
+import { OfferSummaryValidTimes } from '@ball-network/api';
+import {
+  useGetWalletsQuery,
+  useCheckOfferValidityMutation,
+  useGetTimestampForHeightQuery,
+  useGetHeightInfoQuery,
+} from '@ball-network/api-react';
 import {
   AlertDialog,
   Flex,
@@ -19,10 +25,13 @@ import type OfferBuilderData from '../../@types/OfferBuilderData';
 import type OfferSummary from '../../@types/OfferSummary';
 import useAcceptOfferHook from '../../hooks/useAcceptOfferHook';
 import useWalletOffers from '../../hooks/useWalletOffers';
+import getCurrentTime from '../../util/getCurrentTime';
 import getUnknownCATs from '../../util/getUnknownCATs';
 import offerToOfferBuilderData from '../../util/offerToOfferBuilderData';
 import OfferState from '../offers/OfferState';
+
 import OfferBuilder from './OfferBuilder';
+import OfferBuilderExpirationSection from './OfferBuilderExpirationSection';
 import OfferNavigationHeader from './OfferNavigationHeader';
 
 export type OfferBuilderViewerProps = {
@@ -37,6 +46,7 @@ export type OfferBuilderViewerProps = {
   canCounterOffer?: boolean;
   address?: string; // where to send a counter offer
   fee?: string; // in mojos
+  myOfferValidTimes?: OfferSummaryValidTimes;
 };
 
 function OfferBuilderViewer(props: OfferBuilderViewerProps, ref: any) {
@@ -52,6 +62,7 @@ function OfferBuilderViewer(props: OfferBuilderViewerProps, ref: any) {
     canCounterOffer = false,
     address,
     fee,
+    myOfferValidTimes,
   } = props;
 
   const showError = useShowError();
@@ -71,6 +82,33 @@ function OfferBuilderViewer(props: OfferBuilderViewerProps, ref: any) {
   const openDialog = useOpenDialog();
 
   const showInvalid = !isValidating && isValid === false;
+
+  const validTimeList = isMyOffer ? myOfferValidTimes : offerSummary?.validTimes;
+
+  const hasExpiration =
+    validTimeList?.maxTime !== null && validTimeList?.maxTime !== undefined && validTimeList?.maxTime !== 0;
+
+  let currentTime = null;
+  let expirationTime = null;
+  let isExpired = false;
+
+  const { data: height, isLoading: isGetHeightInfoLoading } = useGetHeightInfoQuery(undefined, {
+    pollingInterval: 3000,
+  });
+  const { data: lastBlockTimeStampData, isLoading: isGetTimestampForHeightLoading } = useGetTimestampForHeightQuery(
+    { height: height || 0 },
+    { skip: !height }
+  );
+
+  if (hasExpiration && !isExpired) {
+    currentTime = getCurrentTime(lastBlockTimeStampData);
+
+    expirationTime = validTimeList?.maxTime;
+
+    if (expirationTime !== 0) {
+      isExpired = expirationTime < currentTime;
+    }
+  }
 
   useImperativeHandle(ref, () => ({
     submit: () => offerBuilderRef.current?.submit(),
@@ -140,7 +178,7 @@ function OfferBuilderViewer(props: OfferBuilderViewerProps, ref: any) {
   const missingRequestedCATs = !!requestedUnknownCATs?.length;
 
   const canAccept = !!offerData;
-  const disableAccept = missingOfferedCATs || showInvalid;
+  const disableAccept = missingOfferedCATs || showInvalid || isExpired;
 
   const isLoading = isLoadingWallets || (!computedOfferBuilderData && !prepopulatedOfferBuilderData) || isOffersLoading;
 
@@ -259,16 +297,28 @@ function OfferBuilderViewer(props: OfferBuilderViewerProps, ref: any) {
         {error ? null : isLoading ? (
           <Loading center />
         ) : (
-          <OfferBuilder
-            defaultValues={computedOfferBuilderData || prepopulatedOfferBuilderData}
-            onSubmit={handleSubmit}
-            ref={offerBuilderRef}
-            isMyOffer={isMyOffer}
-            imported={imported}
-            state={state}
-            readOnly
-            viewer
-          />
+          <Flex flexDirection="column" gap={3}>
+            {hasExpiration && (
+              <OfferBuilderExpirationSection
+                isViewing
+                currentTime={currentTime}
+                expirationTime={expirationTime}
+                onSubmit={() => {}}
+                isGetHeightInfoLoading={isGetHeightInfoLoading}
+                isGetTimestampForHeightLoading={isGetTimestampForHeightLoading}
+              />
+            )}
+            <OfferBuilder
+              defaultValues={computedOfferBuilderData || prepopulatedOfferBuilderData}
+              onSubmit={handleSubmit}
+              ref={offerBuilderRef}
+              isMyOffer={isMyOffer}
+              imported={imported}
+              state={state}
+              readOnly
+              viewer
+            />
+          </Flex>
         )}
       </Flex>
     </Grid>

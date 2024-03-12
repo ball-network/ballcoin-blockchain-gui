@@ -7,6 +7,7 @@ import { useFieldArray } from 'react-hook-form';
 
 import useOfferBuilderContext from '../../hooks/useOfferBuilderContext';
 import useStandardWallet from '../../hooks/useStandardWallet';
+
 import OfferBuilderSection from './OfferBuilderSection';
 import OfferBuilderValue from './OfferBuilderValue';
 import OfferBuilderWalletBalance from './OfferBuilderWalletBalance';
@@ -42,14 +43,15 @@ export default function OfferBuilderFeeSection(props: OfferBuilderFeeSectionProp
   }
 
   const canAdd =
-    (!fields.length && state === undefined && !viewer) || // If in builder mode, or in viewer mode when offer hasn't been accepted
-    (viewer && imported && !offering); // If in viewer mode when offer has not been accepted and showing the requesting side
+    !fields.length && // If there is not already a fee field
+    ((state === undefined && !viewer) || // If in builder mode, or in viewer mode when offer hasn't been accepted
+      (viewer && imported && offering)); // If in viewer mode when offer has not been accepted and showing the offering side
   const disableReadOnly = offering && viewer && imported;
   const expanded = !!fields.length; // Fee section is expanded if there is a field value set. Could be ''.
 
   return (
     <OfferBuilderSection
-      icon={<Fees />}
+      icon={<Fees color="info" />}
       title={<Trans>Fees</Trans>}
       subtitle={<Trans>Optional network fee to expedite acceptance of your offer</Trans>}
       onAdd={canAdd ? handleAdd : undefined}

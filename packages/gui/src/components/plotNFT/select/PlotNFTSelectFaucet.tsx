@@ -11,13 +11,17 @@ type Props = {
 };
 
 export default function PlotNFTSelectFaucet(props: Props) {
-  const { step = 1, onCancel } = props;
+  const { step, onCancel } = props;
   const currencyCode = useCurrencyCode();
   const openExternal = useOpenExternal();
 
-  function handleClick() {
-    openExternal('https://faucet.ballcoin.top/');
-  }
+  const handleClick = React.useCallback(() => {
+    if (currencyCode === 'TBALL') {
+      openExternal('https://testnet10-faucet.ballcoin.vip/');
+    } else {
+      openExternal('https://faucet.ballcoin.vip/');
+    }
+  }, [currencyCode, openExternal]);
 
   return (
     <CardStep

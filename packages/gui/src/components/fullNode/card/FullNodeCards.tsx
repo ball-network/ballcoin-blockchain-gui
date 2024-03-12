@@ -10,6 +10,7 @@ import FullNodeCardStatus from './FullNodeCardStatus';
 import FullNodeCardTotalIterations from './FullNodeCardTotalIterations';
 import FullNodeCardVDFSubSlotIterations from './FullNodeCardVDFSubSlotIterations';
 import FullNodeEstimatedNetworkSpace from './FullNodeEstimatedNetworkSpace';
+import FullNodeCardStake from "./FullNodeCardStake";
 
 export default function FullNodeCards() {
   return (
@@ -42,6 +43,7 @@ export default function FullNodeCards() {
         <Grid xs={12} md={4} item>
           <FullNodeEstimatedNetworkSpace />
         </Grid>
+        <FullNodeCardStake />
       </Grid>
     </div>
   );

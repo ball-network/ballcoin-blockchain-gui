@@ -2,7 +2,7 @@
 
 import type { NFTInfo } from '@ball-network/api';
 import { useSetNFTStatusMutation, useLocalStorage } from '@ball-network/api-react';
-import { AlertDialog, DropdownActions, MenuItem, useOpenDialog } from '@ball-network/core';
+import { AlertDialog, DropdownActions, MenuItem, useOpenDialog, isValidURL } from '@ball-network/core';
 import {
   Burn as BurnIcon,
   LinkSmall as LinkSmallIcon,
@@ -24,7 +24,6 @@ import { ListItemIcon, Typography } from '@mui/material';
 import React, { useMemo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCopyToClipboard } from 'react-use';
-import isURL from 'validator/lib/isURL';
 
 import useBurnAddress from '../../hooks/useBurnAddress';
 import useHiddenNFTs from '../../hooks/useHiddenNFTs';
@@ -34,6 +33,7 @@ import useViewNFTOnExplorer, { NFTExplorer } from '../../hooks/useViewNFTOnExplo
 import NFTSelection from '../../types/NFTSelection';
 import download from '../../util/download';
 import removeHexPrefix from '../../util/removeHexPrefix';
+
 import MultipleDownloadDialog from './MultipleDownloadDialog';
 import NFTBurnDialog from './NFTBurnDialog';
 import NFTMoveToProfileDialog from './NFTMoveToProfileDialog';
@@ -297,7 +297,7 @@ function NFTOpenInBrowserContextualAction(props: NFTOpenInBrowserContextualActio
       return false;
     }
 
-    return isURL(dataUrl);
+    return isValidURL(dataUrl);
   }, [dataUrl]);
   const disabled = !haveDataUrl || !isUrlValid;
 

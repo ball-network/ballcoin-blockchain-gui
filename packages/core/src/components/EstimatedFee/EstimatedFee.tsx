@@ -12,8 +12,11 @@ import {
 import React, { useState, useEffect, useMemo } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
+import Color from '../../constants/Color';
+import Mode from '../../constants/Mode';
 import useCurrencyCode from '../../hooks/useCurrencyCode';
 import useLocale from '../../hooks/useLocale';
+import useMode from '../../hooks/useMode';
 import mojoToBallLocaleString from '../../utils/mojoToBallLocaleString';
 import Fee from '../Fee';
 import Flex from '../Flex';
@@ -126,7 +129,7 @@ function CountdownBar({ startTime, refreshSeconds }: { startTime: number; refres
   const containerStyle = {
     height: 2,
     width: '100%',
-    backgroundColor: '#e0e0de',
+    backgroundColor: Color.Neutral[200],
     borderRadius: 0,
     margin: 0,
   };
@@ -134,14 +137,14 @@ function CountdownBar({ startTime, refreshSeconds }: { startTime: number; refres
   const fillerStyle = {
     height: '100%',
     width: `${currentProgress}%`,
-    backgroundColor: 'green',
+    backgroundColor: Color.Green[600],
     borderRadius: 'inherit',
     // textAlign: 'right',
   };
 
   const labelStyle = {
     padding: 0,
-    color: 'white',
+    color: Color.Neutral[50],
     fontWeight: 'bold',
   };
 
@@ -174,6 +177,7 @@ type FeeProps = {
 
 export default function EstimatedFee(props: FeeProps) {
   const { name, txType, required, ...rest } = props;
+  const [mode] = useMode();
   const { setValue } = useFormContext();
   const [requestId, setRequestId] = useState<string | undefined>(undefined);
   const [startTime, setStartTime] = useState<number | undefined>(undefined);
@@ -181,6 +185,7 @@ export default function EstimatedFee(props: FeeProps) {
     { targetTimes: TARGET_TIMES, spendType: txType },
     {
       pollingInterval: REFRESH_SECONDS * 1000, // in milliseconds
+      skip: mode === Mode.WALLET,
     }
   );
   const { data: ests, isLoading, isSuccess, requestId: feeEstimateRequestId, startedTimeStamp } = result;

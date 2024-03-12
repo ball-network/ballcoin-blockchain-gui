@@ -3,10 +3,11 @@ import {
   useRemovePlotDirectoryMutation,
   useGetPlotDirectoriesQuery,
 } from '@ball-network/api-react';
-import { useShowError, Button, Suspender } from '@ball-network/core';
+import { useShowError, Button, Loading } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import { Folder as FolderIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
+  Alert,
   Avatar,
   Box,
   Dialog,
@@ -19,6 +20,7 @@ import {
   ListItemAvatar,
   ListItemSecondaryAction,
   ListItemText,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import React from 'react';
@@ -39,10 +41,6 @@ export default function PlotAddDirectoryDialog(props: Props) {
   const selectDirectory = useSelectDirectory({
     buttonLabel: 'Select Plot Directory',
   });
-
-  if (isLoading) {
-    return <Suspender />;
-  }
 
   function handleClose() {
     onClose();
@@ -89,24 +87,37 @@ export default function PlotAddDirectoryDialog(props: Props) {
             plotting screen.
           </Trans>
         </Typography>
+        {directories && directories.length > 0 && (
+          <Alert severity="info">
+            <Trans>
+              Clicking a delete icon only removes a directory from this list and never deletes the directory itself
+            </Trans>
+          </Alert>
+        )}
         <Box display="flex">
-          <List dense>
-            {directories?.map((dir: string) => (
-              <ListItem key={dir}>
-                <ListItemAvatar>
-                  <Avatar>
-                    <FolderIcon />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText primary={dir} />
-                <ListItemSecondaryAction>
-                  <IconButton edge="end" aria-label="delete" onClick={() => removePlotDir(dir)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
+          {isLoading ? (
+            <Loading center />
+          ) : (
+            <List dense>
+              {directories?.map((dir: string) => (
+                <ListItem key={dir}>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <FolderIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText primary={dir} />
+                  <ListItemSecondaryAction>
+                    <Tooltip title={<Trans>Remove from the list</Trans>}>
+                      <IconButton edge="end" aria-label="delete" onClick={() => removePlotDir(dir)}>
+                        <DeleteIcon color="info" />
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          )}
         </Box>
         <Box display="flex">
           <Box>

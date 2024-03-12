@@ -1,10 +1,10 @@
 # ballcoin-blockchain-gui/api
 
-![Ball logo](https://www.ballcoin.top/wp-content/uploads/2022/09/ball-logo.svg)
+![Ball logo](https://www.ballcoin.vip/wp-content/uploads/2022/09/ball-logo.svg)
 
-![GitHub contributors](https://img.shields.io/github/contributors/Ball-Network/ballcoin-blockchain-gui?logo=GitHub)
+![GitHub contributors](https://img.shields.io/github/contributors/ball-network/ballcoin-blockchain-gui?logo=GitHub)
 
-This library provides support for TypeScript/JavaScript [Ball](https://www.ballcoin.top) apps to access the [BallCoin Blockchain RPC](https://docs.ballcoin.top/rpc/), by making it easier to perform the following actions:
+This library provides support for TypeScript/JavaScript [Ball](https://www.ballcoin.vip) apps to access the [BallCoin Blockchain RPC](https://docs.ballcoin.vip/rpc/), by making it easier to perform the following actions:
 
 - Making requests to the BallCoin Blockchain RPC.
 - Catch responses and errors with standard try/catch and async/await syntax.
@@ -24,7 +24,7 @@ import sleep from 'sleep-promise';
 
 (async () => {
   const client = new Client({
-    url: 'wss://127.0.0.1:38881',
+    url: 'wss://127.0.0.1:23320',
     // key and crt files should be in your homedir in: .ball/mainnet/config/ssl/daemon/
     cert: readFileSync('private_cert.crt'),
     key: readFileSync('private_key.key'),
@@ -62,4 +62,4 @@ import sleep from 'sleep-promise';
 
 ## Development
 
-Please read and follow the main [README.md](https://github.com/Ball-Network/ballcoin-blockchain-gui) of this monorepo.
+Please read and follow the main [README.md](https://github.com/ball-network/ballcoin-blockchain-gui) of this monorepo.

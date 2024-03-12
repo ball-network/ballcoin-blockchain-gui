@@ -1,6 +1,8 @@
 import { WalletType, type Wallet } from '@ball-network/api';
 import { useGetCatListQuery } from '@ball-network/api-react';
-import { useCurrencyCode } from '@ball-network/core';
+import { Flex, TooltipIcon, useCurrencyCode } from '@ball-network/core';
+import { CrCat } from '@ball-network/icons';
+import { t, Trans } from '@lingui/macro';
 import { Typography, type TypographyProps } from '@mui/material';
 import React from 'react';
 import styled from 'styled-components';
@@ -8,6 +10,12 @@ import styled from 'styled-components';
 const StyledSymbol = styled(Typography)`
   font-size: 1rem;
 `;
+
+const STABLY_USDSC_ASSET_ID = '6d95dae356e32a71db5ddcb42224754a02524c615c5fc35f568c2af04774e589';
+
+const AssetIdTooltipMapping = {
+  [STABLY_USDSC_ASSET_ID]: t`Classic version of Stably USDS as held by Prime Trust`,
+};
 
 export type WalletIconProps = TypographyProps & {
   wallet: Wallet;
@@ -27,12 +35,24 @@ export default function WalletIcon(props: WalletIconProps) {
     );
   }
 
-  if (!isLoading && wallet.type === WalletType.CAT) {
+  if (wallet.type === WalletType.CRCAT) {
+    return (
+      <StyledSymbol color={color} {...rest}>
+        <CrCat sx={{ verticalAlign: 'middle' }} /> <Trans>Restricted CAT</Trans>
+      </StyledSymbol>
+    );
+  }
+
+  if (!isLoading && [WalletType.CAT, WalletType.CRCAT].includes(wallet.type)) {
     const token = catList.find((tokenItem) => tokenItem.assetId === wallet.meta?.assetId);
     if (token) {
+      const tooltipText = AssetIdTooltipMapping[token.assetId];
       return (
         <StyledSymbol color={color} {...rest}>
-          {token.symbol}
+          <Flex flexDirection="row" alignItems="center" gap={1}>
+            {token.symbol}
+            {tooltipText && <TooltipIcon>{tooltipText}</TooltipIcon>}
+          </Flex>
         </StyledSymbol>
       );
     }

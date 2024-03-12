@@ -4,10 +4,9 @@ type ProofOfSpace =
       challenge: string;
       publicPoolKey: string;
       poolContractPuzzleHash: string;
-      localPublicKey: string;
+      plotPublicKey: string;
       size: number;
       proof: string;
-      farmerPublicKey: string;
     };
 
 export default ProofOfSpace;

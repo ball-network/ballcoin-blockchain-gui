@@ -2,10 +2,11 @@ import { useGetKeyringStatusQuery, useMigrateKeyringMutation } from '@ball-netwo
 import {
   Button,
   AlertDialog,
+  Color,
   Flex,
   useOpenDialog,
   useValidateChangePassphraseParams,
-  Suspender,
+  Loading,
 } from '@ball-network/core';
 import { t, Trans } from '@lingui/macro';
 import {
@@ -41,7 +42,7 @@ export default function AppKeyringMigrator() {
   const [showCapsLock, setShowCapsLock] = useState(false);
 
   if (isLoading) {
-    return <Suspender />;
+    return <Loading center />;
   }
 
   const {
@@ -228,7 +229,7 @@ export default function AppKeyringMigrator() {
             <Tooltip
               title={t`Your passphrase can be stored in your system's secure credential store. Ball will be able to access your keys without prompting for your passphrase.`}
             >
-              <HelpIcon style={{ color: '#c8c8c8', fontSize: 12 }} />
+              <HelpIcon style={{ color: Color.Neutral[300], fontSize: 12 }} />
             </Tooltip>
           </Box>
         )}
@@ -249,7 +250,7 @@ export default function AppKeyringMigrator() {
             <Tooltip
               title={t`After your keys are successfully migrated to the new keyring, you may choose to have your keys removed from the old keyring.`}
             >
-              <HelpIcon style={{ color: '#c8c8c8', fontSize: 12 }} />
+              <HelpIcon style={{ color: Color.Neutral[300], fontSize: 12 }} />
             </Tooltip>
           </Box>
         )}

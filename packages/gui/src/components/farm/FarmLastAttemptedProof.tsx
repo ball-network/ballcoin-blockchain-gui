@@ -1,4 +1,4 @@
-import { useGetFarmingInfoQuery } from '@ball-network/api-react';
+import { useGetNewFarmingInfoQuery } from '@ball-network/api-react';
 import { Link, Table, Card } from '@ball-network/core';
 import { Trans } from '@lingui/macro';
 import moment from 'moment';
@@ -35,9 +35,14 @@ const cols = [
 export default function FarmLastAttemptedProof() {
   // const { size } = usePlots();
 
-  const { data: lastAttemptedProof, isLoading } = useGetFarmingInfoQuery();
+  const { data, isLoading } = useGetNewFarmingInfoQuery();
 
-  const reducedLastAttemptedProof = lastAttemptedProof?.slice(0, 5);
+  const reducedLastAttemptedProof = React.useMemo(() => {
+    if (!data) {
+      return data;
+    }
+    return data.newFarmingInfo.slice(0, 5);
+  }, [data]);
   const isEmpty = !reducedLastAttemptedProof?.length;
 
   return (
@@ -49,7 +54,7 @@ export default function FarmLastAttemptedProof() {
           This table shows you the last time your farm attempted to win a block challenge.{' '}
           <Link
             target="_blank"
-            href="https://github.com/Ball-Network/ballcoin-blockchain/wiki/FAQ#what-is-the-plot-filter-and-why-didnt-my-plot-pass-it"
+            href="https://github.com/Chia-Network/chia-blockchain/wiki/FAQ#what-is-the-plot-filter-and-why-didnt-my-plot-pass-it"
           >
             Learn more
           </Link>

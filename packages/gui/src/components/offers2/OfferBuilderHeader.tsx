@@ -1,5 +1,6 @@
-import { Flex } from '@ball-network/core';
+import { Color, Flex } from '@ball-network/core';
 import { Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { ReactNode } from 'react';
 
 export type OfferBuilderHeaderProps = {
@@ -10,15 +11,16 @@ export type OfferBuilderHeaderProps = {
 
 export default function OfferBuilderHeader(props: OfferBuilderHeaderProps) {
   const { icon, title, subtitle } = props;
+  const theme = useTheme();
 
   return (
     <Flex
       gap={2}
       sx={{
         borderRadius: 2,
-        backgroundColor: 'action.hover',
+        backgroundColor: theme.palette.mode === 'light' ? Color.Neutral[200] : Color.Neutral[800],
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: theme.palette.mode === 'light' ? Color.Neutral[300] : Color.Neutral[600],
         paddingY: 2,
         paddingX: 3,
       }}

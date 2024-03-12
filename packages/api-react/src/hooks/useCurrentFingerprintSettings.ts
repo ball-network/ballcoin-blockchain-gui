@@ -1,4 +1,5 @@
 import { useGetLoggedInFingerprintQuery } from '../services/wallet';
+
 import useFingerprintSettings from './useFingerprintSettings';
 import { type Serializable } from './usePrefs';
 
@@ -7,7 +8,7 @@ export default function useCurrentFingerprintSettings<Type extends Serializable>
   defaultValue?: Type
 ): [
   Type | undefined,
-  (value: Type) => void,
+  (value: Type | ((prevValue: Type) => Type)) => void,
   {
     fingerprint: number | undefined;
     isLoading: boolean;

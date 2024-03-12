@@ -1,12 +1,14 @@
-import { IconButton, Flex } from '@ball-network/core';
+import { Color, IconButton, Flex } from '@ball-network/core';
 import { MoreVert } from '@mui/icons-material';
 import { Card, CardActionArea, CardContent, Checkbox, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React, { useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import useHiddenNFTs from '../../hooks/useHiddenNFTs';
 import useNFT from '../../hooks/useNFT';
 import getNFTId from '../../util/getNFTId';
+
 import NFTContextualActions, { NFTContextualActionTypes } from './NFTContextualActions';
 import NFTPreview from './NFTPreview';
 import NFTTitle from './NFTTitle';
@@ -19,6 +21,7 @@ export type NFTCardProps = {
   onSelect?: (nftId: string) => Promise<boolean>;
   search?: string;
   selected?: boolean;
+  ratio?: number;
 };
 
 function NFTCard(props: NFTCardProps) {
@@ -30,11 +33,13 @@ function NFTCard(props: NFTCardProps) {
     onSelect,
     search,
     selected = false,
+    ratio = 4 / 3,
   } = props;
 
   const nftId = useMemo(() => getNFTId(id), [id]);
 
   const [isNFTHidden] = useHiddenNFTs();
+  const theme = useTheme();
   const navigate = useNavigate();
 
   const { nft, isLoading } = useNFT(nftId);
@@ -55,7 +60,14 @@ function NFTCard(props: NFTCardProps) {
 
   return (
     <Flex flexDirection="column" flexGrow={1} minWidth={0}>
-      <Card sx={{ borderRadius: '8px', opacity: isHidden ? 0.5 : 1 }} variant="outlined">
+      <Card
+        sx={{
+          borderRadius: '8px',
+          borderColor: theme.palette.mode === 'light' ? Color.Neutral[300] : Color.Neutral[700],
+          opacity: isHidden ? 0.5 : 1,
+        }}
+        variant="outlined"
+      >
         <CardActionArea onClick={handleClick}>
           {onSelect && (
             <Checkbox
@@ -65,7 +77,7 @@ function NFTCard(props: NFTCardProps) {
               sx={{ zIndex: 1, position: 'absolute', right: 2, top: 2 }}
             />
           )}
-          <NFTPreview id={nftId} disableInteractions={isOffer} preview />
+          <NFTPreview id={nftId} disableInteractions={isOffer} ratio={ratio} preview />
         </CardActionArea>
         <CardActionArea onClick={() => canExpandDetails && handleClick()} component="div">
           <CardContent>

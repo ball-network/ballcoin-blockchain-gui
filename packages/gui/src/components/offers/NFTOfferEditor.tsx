@@ -7,6 +7,7 @@ import {
   Back,
   Button,
   ButtonLoading,
+  Color,
   Fee,
   Flex,
   Form,
@@ -29,7 +30,7 @@ import {
 } from '@ball-network/core';
 import { Trans, t } from '@lingui/macro';
 import { Warning as WarningIcon } from '@mui/icons-material';
-import { Box, Divider, Grid, Tabs, Tab, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Divider, Grid, Tabs, Tab, Typography, useTheme } from '@mui/material';
 import BigNumber from 'bignumber.js';
 import React, { useMemo, useState } from 'react';
 import { useForm, useFormContext } from 'react-hook-form';
@@ -40,6 +41,7 @@ import useNFT from '../../hooks/useNFT';
 import useNFTs from '../../hooks/useNFTs';
 import useSuppressShareOnCreate from '../../hooks/useSuppressShareOnCreate';
 import { convertRoyaltyToPercentage, isValidNFTId, launcherIdFromNFTId } from '../../util/nfts';
+
 import NFTOfferExchangeType from './NFTOfferExchangeType';
 import NFTOfferPreview from './NFTOfferPreview';
 import NFTOfferTokenSelector from './NFTOfferTokenSelector';
@@ -489,8 +491,9 @@ type NFTBuildOfferRequestParams = {
 
 function buildOfferRequest(params: NFTBuildOfferRequestParams) {
   const { exchangeType, nft, nftLauncherId, tokenWalletInfo, tokenAmount, fee } = params;
-  const baseMojoAmount: BigNumber =
-    tokenWalletInfo.walletType === WalletType.CAT ? catToMojo(tokenAmount) : ballToMojo(tokenAmount);
+  const baseMojoAmount: BigNumber = [WalletType.CAT, WalletType.CRCAT].includes(tokenWalletInfo.walletType)
+    ? catToMojo(tokenAmount)
+    : ballToMojo(tokenAmount);
   const mojoAmount = exchangeType === NFTOfferExchangeType.NFTForToken ? baseMojoAmount : baseMojoAmount.negated();
   const feeMojoAmount = ballToMojo(fee);
   const nftAmount = exchangeType === NFTOfferExchangeType.NFTForToken ? -1 : 1;
@@ -689,8 +692,10 @@ export default function NFTOfferEditor(props: NFTOfferEditorProps) {
           border: `1px solid ${useColorModeValue(theme, 'border')}`,
           borderRadius: '4px',
           bgcolor: 'background.paper',
-          boxShadow:
-            '0px 2px 1px -1px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 1px 3px 0px rgb(0 0 0 / 12%)',
+          boxShadow: `0px 2px 1px -1px ${alpha(Color.Neutral[900], 0.2)}, 0px 1px 1px 0px ${alpha(
+            Color.Neutral[900],
+            0.14
+          )}, 0px 1px 3px 0px ${alpha(Color.Neutral[900], 0.12)}`,
           overflow: 'hidden',
         }}
       >

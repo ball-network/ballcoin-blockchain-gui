@@ -11,7 +11,6 @@ export const {
 
   useCloseMutation,
   useGetStateQuery,
-  useClientStartServiceMutation,
 } = client;
 
 // daemon hooks
@@ -29,6 +28,7 @@ export const {
   useMigrateKeyringMutation,
   useUnlockKeyringMutation,
   useGetVersionQuery,
+  useGetKeysForPlottingQuery,
 
   useGetPlottersQuery,
   useStopPlottingMutation,
@@ -37,8 +37,10 @@ export const {
   useAddPrivateKeyMutation,
   useGetKeyQuery,
   useGetKeysQuery,
+  useGetWalletAddressesQuery,
   useSetLabelMutation,
   useDeleteLabelMutation,
+  useGetPublicKeyQuery,
 } = daemon;
 
 // farmer hooks
@@ -61,7 +63,13 @@ export const {
   useGetSignagePointsQuery,
   useGetPoolStateQuery,
   useSetPayoutInstructionsMutation,
-  useGetFarmingInfoQuery,
+  useGetNewFarmingInfoQuery,
+  useGetMissingSignagePointsQuery,
+  useResetMissingSignagePointsMutation,
+  useGetFilterChallengeStatQuery,
+  useResetFilterChallengeStatMutation,
+  useGetPartialStatsOffsetQuery,
+  useResetPartialStatsMutation,
 } = farmer;
 
 // full node hooks
@@ -89,6 +97,7 @@ export const {
   useGetWalletsQuery,
   useGetTransactionQuery,
   useGetTransactionMemoMutation,
+  useGetTransactionAsyncMutation,
   useGetPwStatusQuery,
   usePwAbsorbRewardsMutation,
   usePwJoinPoolMutation,
@@ -96,6 +105,7 @@ export const {
   useCreateNewWalletMutation,
   useDeleteUnconfirmedTransactionsMutation,
   useGetWalletBalanceQuery,
+  useGetWalletBalancesQuery,
   useGetFarmedAmountQuery,
   useSendTransactionMutation,
   useGenerateMnemonicMutation,
@@ -111,6 +121,7 @@ export const {
   useGetNextAddressMutation,
   useFarmBlockMutation,
   useGetTimestampForHeightQuery,
+  useLazyGetTimestampForHeightQuery,
   useGetHeightInfoQuery,
   useGetNetworkInfoQuery,
   useGetSyncStatusQuery,
@@ -142,6 +153,7 @@ export const {
   useSpendCATMutation,
   useAddCATTokenMutation,
   useGetStrayCatsQuery,
+  useCrCatApprovePendingMutation,
 
   // PlotNFTs
   useGetPlotNFTsQuery,
@@ -169,6 +181,7 @@ export const {
   useGetNFTWalletsWithDIDsQuery,
   useGetNFTInfoQuery,
   useLazyGetNFTInfoQuery,
+  useMintNFTMutation,
   useTransferNFTMutation,
   useSetNFTDIDMutation,
   useSetNFTStatusMutation,
@@ -185,10 +198,28 @@ export const {
   // verify
   useVerifySignatureMutation,
 
-  // staking
-  useStakingInfoQuery,
-  useStakingSendMutation,
-  useStakingWithdrawMutation,
+  // VC (Verifiable Credentials)
+  useGetVCQuery,
+  useGetVCListQuery,
+  useSpendVCMutation,
+  useAddVCProofsMutation,
+  useGetProofsForRootQuery,
+  useLazyGetProofsForRootQuery,
+  useRevokeVCMutation,
+  // clawback
+  useSetAutoClaimMutation,
+  useGetAutoClaimQuery,
+  useSpendClawbackCoinsMutation,
+
+  // stake Old
+  useStakeInfoOldQuery,
+  useStakeWithdrawOldMutation,
+
+  // stake
+  useSetAutoWithdrawStakeMutation,
+  useGetAutoWithdrawStakeQuery,
+  useStakeInfoQuery,
+  useStakeSendMutation,
 
   useFindPoolNFTMutation,
   useRecoverPoolNFTMutation,
@@ -204,6 +235,9 @@ export const {
   useGetPlotDirectoriesQuery,
   useAddPlotDirectoryMutation,
   useRemovePlotDirectoryMutation,
+  useGetFarmingInfoQuery,
+  useGetHarvesterConfigQuery,
+  useUpdateHarvesterConfigMutation,
 } = harvester;
 
 // plotter hooks

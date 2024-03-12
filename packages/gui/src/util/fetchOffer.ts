@@ -1,12 +1,19 @@
 import { store, walletApi } from '@ball-network/api-react';
-import isURL from 'validator/lib/isURL';
+import { isValidURL } from '@ball-network/core';
 
 import OfferServices from '../constants/OfferServices';
+
 import offerToOfferBuilderData from './offerToOfferBuilderData';
 import parseFileContent from './parseFileContent';
 
-export default async function fetchOffer(offerUrl: string) {
-  if (!offerUrl || !isURL(offerUrl)) {
+type FetchOfferParams = {
+  offerUrl: string;
+  getContent: (url: string, options?: { maxSize?: number; timeout?: number }) => Promise<Buffer>;
+  getHeaders: (url: string, options?: { maxSize?: number; timeout?: number }) => Promise<Object>;
+};
+
+export default async function fetchOffer({ offerUrl, getContent, getHeaders }: FetchOfferParams) {
+  if (!offerUrl || !isValidURL(offerUrl)) {
     throw new Error(`URL is not valid: ${offerUrl}`);
   }
 
@@ -16,7 +23,11 @@ export default async function fetchOffer(offerUrl: string) {
     throw new Error('Service not found');
   }
 
-  const { content, headers } = await window.cacheApi.get(offerUrl, {
+  const headers = await getHeaders(offerUrl, {
+    maxSize: 10 * 1024 * 1024, // 10 MB
+  });
+
+  const content = await getContent(offerUrl, {
     maxSize: 10 * 1024 * 1024, // 10 MB
   });
 
@@ -27,7 +38,7 @@ export default async function fetchOffer(offerUrl: string) {
   }
 
   // fetch offer summary
-  const resultOfferSummaryPromise = store.dispatch(walletApi.endpoints.getOfferSummary.initiate(offerData));
+  const resultOfferSummaryPromise = store.dispatch(walletApi.endpoints.getOfferSummary.initiate({ offerData }));
   const { data: dataOfferSummary, error: errorOfferSummary } = await resultOfferSummaryPromise;
   if (errorOfferSummary) {
     throw errorOfferSummary;
@@ -40,7 +51,9 @@ export default async function fetchOffer(offerUrl: string) {
   }
 
   // check offer validity
-  const resultOfferValidityPromise = store.dispatch(walletApi.endpoints.checkOfferValidity.initiate(offerData));
+  const resultOfferValidityPromise = store.dispatch(
+    walletApi.endpoints.checkOfferValidity.initiate({ offer: offerData })
+  );
   const { data: dataOfferValidity, error: errorOfferValidity } = await resultOfferValidityPromise;
   if (errorOfferValidity) {
     throw errorOfferValidity;

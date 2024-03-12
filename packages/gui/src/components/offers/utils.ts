@@ -6,6 +6,7 @@ import type { ChipProps } from '@mui/material';
 
 import { AssetIdMapEntry } from '../../hooks/useAssetIdName';
 import { launcherIdToNFTId } from '../../util/nfts';
+
 import NFTOfferExchangeType from './NFTOfferExchangeType';
 import OfferAsset from './OfferAsset';
 import OfferState from './OfferState';
@@ -109,42 +110,6 @@ export function suggestedFilenameForOffer(
   return `${makerString}_x_${takerString}.offer`;
 }
 
-export function shortSummaryForOffer(
-  summary: OfferSummaryRecord,
-  lookupByAssetId: (assetId: string) => AssetIdMapEntry | undefined
-): string {
-  if (!summary) {
-    return '';
-  }
-
-  function summaryBuilder(
-    shortSummaryParam: string,
-    args: [assetInfo: AssetIdMapEntry | undefined, amount: string]
-  ): string {
-    let shortSummary = shortSummaryParam;
-    const [assetInfo, amount] = args;
-
-    if (shortSummary) {
-      shortSummary += ', ';
-    }
-
-    if (assetInfo && amount !== undefined) {
-      shortSummary += `${formatAmountForWalletType(amount, assetInfo.walletType)} ${assetInfo.displayName.replace(
-        /\s/g,
-        ''
-      )}`;
-    }
-
-    return shortSummary;
-  }
-
-  const [makerString, takerString] = offerContainsAssetOfType(summary, 'singleton')
-    ? summaryStringsForNFTOffer(summary, lookupByAssetId, summaryBuilder)
-    : summaryStringsForOffer(summary, lookupByAssetId, summaryBuilder);
-
-  return t`Offering: [${makerString}], Requesting: [${takerString}]`;
-}
-
 export function displayStringForOfferState(state: OfferState): string {
   switch (state) {
     case OfferState.PENDING_ACCEPT:
@@ -187,7 +152,7 @@ export function formatAmountForWalletType(amount: string | number, walletType: W
   if (walletType === WalletType.STANDARD_WALLET) {
     return mojoToBallLocaleString(amount, locale);
   }
-  if (walletType === WalletType.CAT) {
+  if ([WalletType.CAT, WalletType.CRCAT].includes(walletType)) {
     return mojoToCATLocaleString(amount, locale);
   }
 

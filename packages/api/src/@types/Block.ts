@@ -23,12 +23,11 @@ type ChallengeOrRewardsChainVdf = {
 
 type ProofOfSpace = {
   challenge: string;
-  localPublicKey: string;
+  plotPublicKey: string;
   poolContractPuzzleHash: string;
   poolPublicKey: string | null;
   proof: string;
   size: number;
-  farmerPublicKey: string;
 };
 type RewardChainBlock = {
   challengeChainIpVdf?: ChallengeOrRewardsChainVdf;

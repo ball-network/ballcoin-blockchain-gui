@@ -5,7 +5,7 @@ const ServiceName = {
   HARVESTER: 'ball_harvester',
   SIMULATOR: 'ball_full_node_simulator',
   DAEMON: 'daemon',
-  PLOTTER: 'chia_plotter',
+  PLOTTER: 'ball_plotter',
   TIMELORD: 'ball_timelord',
   INTRODUCER: 'ball_introducer',
   EVENTS: 'wallet_ui',

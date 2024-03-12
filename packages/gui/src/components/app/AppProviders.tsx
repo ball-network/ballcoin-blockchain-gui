@@ -7,9 +7,11 @@ import {
   ModalDialogs,
   LocaleProvider,
   LayoutLoading,
+  AddressBookProvider,
   dark,
   light,
   ErrorBoundary,
+  AuthProvider,
 } from '@ball-network/core';
 import { nativeTheme } from '@electron/remote';
 import { Trans } from '@lingui/macro';
@@ -25,7 +27,9 @@ import CacheProvider from '../cache/CacheProvider';
 import LRUsProvider from '../lrus/LRUsProvider';
 import NFTProvider from '../nfts/provider/NFTProvider';
 import NotificationsProvider from '../notification/NotificationsProvider';
+import OffersProvider from '../offers2/OffersProvider';
 import WalletConnectProvider, { WalletConnectBallProjectId } from '../walletConnect/WalletConnectProvider';
+
 import AppState from './AppState';
 
 async function waitForConfig() {
@@ -96,22 +100,28 @@ export default function App(props: AppProps) {
       <LocaleProvider i18n={i18n} defaultLocale={defaultLocale} locales={locales}>
         <ThemeProvider theme={theme} fonts global>
           <ErrorBoundary>
-            <CacheProvider>
-              <LRUsProvider>
-                <NFTProvider>
-                  <ModalDialogsProvider>
-                    <Suspense fallback={<LayoutLoading />}>
-                      <WalletConnectProvider projectId={WalletConnectBallProjectId}>
-                        <NotificationsProvider>
-                          <AppState>{outlet ? <Outlet /> : children}</AppState>
-                          <ModalDialogs />
-                        </NotificationsProvider>
-                      </WalletConnectProvider>
-                    </Suspense>
-                  </ModalDialogsProvider>
-                </NFTProvider>
-              </LRUsProvider>
-            </CacheProvider>
+            <AuthProvider>
+              <CacheProvider>
+                <LRUsProvider>
+                  <NFTProvider>
+                    <ModalDialogsProvider>
+                      <Suspense fallback={<LayoutLoading />}>
+                        <AddressBookProvider>
+                          <OffersProvider>
+                            <NotificationsProvider>
+                              <WalletConnectProvider projectId={WalletConnectBallProjectId}>
+                                <AppState>{outlet ? <Outlet /> : children}</AppState>
+                                <ModalDialogs />
+                              </WalletConnectProvider>
+                            </NotificationsProvider>
+                          </OffersProvider>
+                        </AddressBookProvider>
+                      </Suspense>
+                    </ModalDialogsProvider>
+                  </NFTProvider>
+                </LRUsProvider>
+              </CacheProvider>
+            </AuthProvider>
           </ErrorBoundary>
         </ThemeProvider>
       </LocaleProvider>

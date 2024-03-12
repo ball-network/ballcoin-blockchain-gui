@@ -1,6 +1,7 @@
 import type BigNumber from 'bignumber.js';
 
 import type TransactionType from '../constants/TransactionType';
+
 import type SpendBundle from './SpendBundle';
 
 type AdditionsOrRemovals = {
@@ -28,6 +29,13 @@ type Transaction = {
   tradeId: string | null;
   type: TransactionType;
   walletId: number;
+  metadata?: {
+    coinId: string;
+    recipientPuzzleHash: string;
+    senderPuzzleHash: string;
+    timeLock: number;
+    spent: boolean;
+  };
 };
 
 export default Transaction;
